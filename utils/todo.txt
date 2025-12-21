@@ -7,6 +7,7 @@ DATA ANALYSIS
 PREPROCESSING
   - Encoding of labels
   - Transformation of training set
+  - NA value detection
 
 TRAINING
   - Evaluation of multiple models with different hyperparameters
