@@ -1,0 +1,24 @@
+
+DATA ANALYSIS
+  - Analysis of distribution
+  - Feature selection
+  - Detection of outliars
+
+PREPROCESSING
+  - Encoding of labels
+  - Transformation of training set
+
+TRAINING
+  - Evaluation of multiple models with different hyperparameters
+
+COMPARISON
+  - Model performances
+  - Evaluation of metrics
+     - Accuracy
+     - F1
+     - Precision
+     - Confusion matrix
+
+CONCLUSION (BEST MODEL)
+  - Plots and motivation of the choise
+
