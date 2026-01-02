@@ -7,7 +7,20 @@ print("\n\n> Star Classification Dataset")
 print(dataset)
 print(f"Shape: {dataset.shape}")
 
+
 ## Data Preprocessing
+# Check data types (integer, object, float...) of the columns
+target_name = "class"
+X = dataset.iloc[:, dataset.columns != target_name]  # The features are stored in the other columns.
+Y = dataset.iloc[:, dataset.columns == target_name]  # The labels are stored in the "class" column.
+print(f"\n\n> Check data types of features and labels")
+print(X.dtypes)
+print("------------------------")
+# Print the data types of Y
+print(Y.dtypes)
+print(f"\n> Since there are no caterogical features, no encoding is needed!")
+
+
 # Handle missing values
 print(f"\n\n> Check for N/A values since they make the dataset more sparse and therefore hinder the accuracy of the models")
 print(f'Missing values: {dataset.isna().any().any()}')
@@ -21,11 +34,12 @@ print(dataset.describe())
 print(f"\n> Deleting outliars...")
 dataset.drop(
     index = dataset[
-        (dataset.u==dataset.u.min()) | 
-        (dataset.g==dataset.g.min()) | 
-        (dataset.z==dataset.z.min())
+        (dataset.u == dataset.u.min()) | 
+        (dataset.g == dataset.g.min()) | 
+        (dataset.z == dataset.z.min())
     ].index[0], 
     inplace=True
 )
 print(f'\n> Check for outliars after deletion')
 print(dataset.describe())
+
