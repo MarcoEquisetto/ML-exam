@@ -1,5 +1,7 @@
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 # Import the Star Classification Dataset and print its shape
 dataset = pd.read_csv('./dataset/star_classification.csv')
@@ -16,7 +18,6 @@ Y = dataset.iloc[:, dataset.columns == target_name]  # The labels are stored in 
 print(f"\n\n> Check data types of features and labels")
 print(X.dtypes)
 print("------------------------")
-# Print the data types of Y
 print(Y.dtypes)
 print(f"\n> Since there are no caterogical features, no encoding is needed!")
 
@@ -42,4 +43,23 @@ dataset.drop(
 )
 print(f'\n> Check for outliars after deletion')
 print(dataset.describe())
+
+
+# Check class distribution
+print(f"\n\n> Check class distribution (percentage)")
+print(Y.value_counts(normalize=True).mul(100).round(2))
+print(f"\n\n> Data distribution visualization")
+dataset.iloc[:, :-1].hist(bins=30, figsize=(15, 10))
+plt.tight_layout()
+
+
+# Check correlation between features
+print(f"\n\n> Check correlation between features")
+correlationMatrix = X.corr()
+print(correlationMatrix)
+plt.figure(figsize=(10, 8))
+sns.heatmap(correlationMatrix, annot=True, fmt=".2f", cmap='coolwarm')
+plt.title("Feature Correlation Matrix")
+plt.show()
+
 
