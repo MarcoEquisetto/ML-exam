@@ -16,7 +16,7 @@ print(f"Shape: {dataset.shape}")
 columnsToDrop = ['obj_ID', 'run_ID', 'rerun_ID', 'cam_col', 'field_ID', 'spec_obj_ID']
 to_move = ['class']
 dataset = dataset.drop(columns=columnsToDrop)
-print(f"\n> Dropped ID columns from dataset.\n> New Shape: {dataset.shape}")
+print(f"\n> Dropping ID columns from dataset...\n> New Shape: {dataset.shape}")
 new = dataset.columns.difference(to_move).to_list()+to_move
 dataset = dataset[new]
 
@@ -40,7 +40,7 @@ print(dataset.describe())
 
 # Encoding of categorical features
 # 'class', the target feature, is categorical (GALAXY, STAR, QSO), but it is the only one
-print(f"\n\n> Encoding categorical features using Label Encoding")
+print(f"\n\n> Encoding categorical features...")
 label_encoder = LabelEncoder()
 dataset['class'] = label_encoder.fit_transform(dataset['class'])
 print(dataset.head())
@@ -54,8 +54,17 @@ Y = dataset[target_name]
 
 
 # Check class distribution
-print(f"\n> Class distribution (percentage):\n{Y.value_counts(normalize=True).mul(100).round(2)}")
+print(f"\n\n> Class distribution (percentage):\n{Y.value_counts(normalize=True).mul(100).round(2)}")
 X.hist(bins=30, figsize=(15, 10)) 
 plt.suptitle('Feature Distributions')
 plt.tight_layout()
+plt.show()
+
+
+# Feature correlation analysis
+print(f"\n\n> Feature correlation analysis")
+plt.figure(figsize=(12, 10))
+correlation_matrix = dataset.corr(numeric_only=True).abs().style.background_gradient(axis=None, cmap='Reds')
+sns.heatmap(correlation_matrix.data, annot=True, fmt=".2f", cmap='Reds')
+plt.title('Feature Correlation Matrix')
 plt.show()
