@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+from sklearn.preprocessing import LabelEncoder
 
 # Import the Star Classification Dataset and print its shape
 dataset = pd.read_csv('./dataset/star_classification.csv')
@@ -11,16 +12,10 @@ print(f"Shape: {dataset.shape}")
 
 
 ## Data Preprocessing
-# Check data types (integer, object, float...) of the columns
-target_name = "class"
-X = dataset.iloc[:, dataset.columns != target_name]  # The features are stored in the other columns.
-Y = dataset.iloc[:, dataset.columns == target_name]  # The labels are stored in the "class" column.
-print(f"\n\n> Check data types of features and labels")
-print(X.dtypes)
-print("------------------------")
-print(Y.dtypes)
-print(f"\n> Since there are no caterogical features, no encoding is needed!")
-
+# Drop ID columns that aren't useful for classification
+columnsToDrop = ['obj_ID', 'run_ID', 'rerun_ID', 'cam_col', 'field_ID', 'spec_obj_ID']
+dataset = dataset.drop(columns=columnsToDrop)
+print(f"\n> Dropped ID columns from dataset.\n> New Shape: {dataset.shape}")
 
 # Handle missing values
 print(f"\n\n> Check for N/A values since they make the dataset more sparse and therefore hinder the accuracy of the models")
@@ -33,16 +28,20 @@ print(f"\n\n> No N/A values or duplicated rows found in the dataset")
 print(f"\n\n> Check for outliars in the dataset")
 print(dataset.describe())
 print(f"\n> Deleting outliars...")
-dataset.drop(
-    index = dataset[
-        (dataset.u == dataset.u.min()) | 
-        (dataset.g == dataset.g.min()) | 
-        (dataset.z == dataset.z.min())
-    ].index[0], 
-    inplace=True
-)
-print(f'\n> Check for outliars after deletion')
+dataset = dataset[dataset['u'] != -9999]
+dataset = dataset[dataset['g'] != -9999]
+dataset = dataset[dataset['z'] != -9999]
+print(f"\n> Outliers removed. New Shape: {dataset.shape}\n> Check for outliars after deletion")
 print(dataset.describe())
+
+
+# Encoding of categorical features
+# 'class', the target feature, is categorical (GALAXY, STAR, QSO), but it is the only one
+print(f"\n\n> Encoding categorical features using Label Encoding")
+label_encoder = LabelEncoder()
+dataset['class'] = label_encoder.fit_transform(dataset['class'])
+print(f"Classes: {label_encoder.classes_}")
+
 
 
 # Check class distribution
