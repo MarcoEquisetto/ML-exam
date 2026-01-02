@@ -12,10 +12,13 @@ print(f"Shape: {dataset.shape}")
 
 
 ## Data Preprocessing
-# Drop ID columns that aren't useful for classification
+# Drop ID columns that aren't useful for classification and move class column to the end (just for convenience)
 columnsToDrop = ['obj_ID', 'run_ID', 'rerun_ID', 'cam_col', 'field_ID', 'spec_obj_ID']
+to_move = ['class']
 dataset = dataset.drop(columns=columnsToDrop)
 print(f"\n> Dropped ID columns from dataset.\n> New Shape: {dataset.shape}")
+new = dataset.columns.difference(to_move).to_list()+to_move
+dataset = dataset[new]
 
 # Handle missing values
 print(f"\n\n> Check for N/A values since they make the dataset more sparse and therefore hinder the accuracy of the models")
@@ -40,25 +43,19 @@ print(dataset.describe())
 print(f"\n\n> Encoding categorical features using Label Encoding")
 label_encoder = LabelEncoder()
 dataset['class'] = label_encoder.fit_transform(dataset['class'])
-print(f"Classes: {label_encoder.classes_}")
+print(dataset.head())
 
+
+# Split the dataset into features and target variable
+print(f"\n\n> Split dataset into features and target variable")
+target_name = "class"
+X = dataset.drop(columns=[target_name])
+Y = dataset[target_name]
 
 
 # Check class distribution
-print(f"\n\n> Check class distribution (percentage)")
-print(Y.value_counts(normalize=True).mul(100).round(2))
-print(f"\n\n> Data distribution visualization")
-dataset.iloc[:, :-1].hist(bins=30, figsize=(15, 10))
+print(f"\n> Class distribution (percentage):\n{Y.value_counts(normalize=True).mul(100).round(2)}")
+X.hist(bins=30, figsize=(15, 10)) 
+plt.suptitle('Feature Distributions')
 plt.tight_layout()
-
-
-# Check correlation between features
-print(f"\n\n> Check correlation between features")
-correlationMatrix = X.corr()
-print(correlationMatrix)
-plt.figure(figsize=(10, 8))
-sns.heatmap(correlationMatrix, annot=True, fmt=".2f", cmap='coolwarm')
-plt.title("Feature Correlation Matrix")
 plt.show()
-
-
