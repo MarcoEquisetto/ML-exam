@@ -28,14 +28,14 @@ print(f'Duplicated rows: {dataset.duplicated().any()}')
 print(f"\n\n> No N/A values or duplicated rows found in the dataset")
 
 
-# Check for 'dirty' data (not outliers yet)
-print(f"\n\n> Check for outliars in the dataset")
+# Pre-check for outliers
+print(f"\n\n> Check for outliers in the dataset")
 print(dataset.describe())
-print(f"\n> Deleting outliars...")
+print(f"\n> Deleting outliers...")
 dataset = dataset[dataset['u'] != -9999]
 dataset = dataset[dataset['g'] != -9999]
 dataset = dataset[dataset['z'] != -9999]
-print(f"\n> Outliers removed. New Shape: {dataset.shape}\n> Check for outliars after deletion")
+print(f"\n> Outliers removed. New Shape: {dataset.shape}\n> Check for outliers after deletion")
 print(dataset.describe())
 
 
@@ -77,7 +77,10 @@ plt.title('Feature Correlation Matrix')
 plt.show()
 
 
-# Outlier detection
+
+
+
+
 
 
 
