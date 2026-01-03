@@ -63,8 +63,8 @@ plt.show()
 # Encoding of categorical features
 # 'class', the target feature, is categorical (GALAXY, STAR, QSO), but it is the only one
 print(f"\n\n> Encoding categorical features...")
-label_encoder = LabelEncoder()
-dataset['class'] = label_encoder.fit_transform(dataset['class'])
+LE = LabelEncoder()
+dataset['class'] = LE.fit_transform(dataset['class'])
 print(dataset.head())
 
 def drawCorrelationMatrix(dataset):
@@ -78,7 +78,7 @@ def drawCorrelationMatrix(dataset):
 # Feature correlation analysis
 print(f"\n\n> Feature correlation analysis")
 CM = drawCorrelationMatrix(dataset)
-print(f"\n\n> Arbitrarily considering features with correlation index higher than 0.9 as highly correlated, we can see that the following pairs are highly correlated:")
+print(f"\n\n> Arbitrarily considering features with correlation index higher than 0.9 as highly correlated, the following pairs are highly correlated:")
 pairs = []
 for i in range(len(CM.data.columns)):
     for j in range(i):
@@ -89,16 +89,17 @@ for i in range(len(CM.data.columns)):
 
 print(f"\n> Drop highly correlated features and recompute correlation matrix")
 for pair in pairs:
-    feature_to_drop = pair[1]
-    if feature_to_drop in dataset.columns:
-        dataset = dataset.drop(columns=[feature_to_drop])
-        print(f"> Dropped feature: {feature_to_drop}")
+    # Keep the first out of the pair of features
+    toDrop = pair[1]
+    if toDrop in dataset.columns:
+        dataset = dataset.drop(columns=[toDrop])
+        print(f"> Dropped feature: {toDrop}")
 
 print(f"\n\n> Optimized correlation matrix:\n{drawCorrelationMatrix(dataset).data}")
 
 
 # Split the dataset into features and target variable
 print(f"\n\n> Split dataset into features and target variable")
-target_name = "class"
-X = dataset.drop(columns=[target_name])
-y = dataset[target_name]
+targetName = "class"
+X = dataset.drop(columns=[targetName])
+y = dataset[targetName]
