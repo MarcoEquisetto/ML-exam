@@ -67,25 +67,38 @@ label_encoder = LabelEncoder()
 dataset['class'] = label_encoder.fit_transform(dataset['class'])
 print(dataset.head())
 
+def drawCorrelationMatrix(dataset):
+    plt.figure(figsize=(12, 10))
+    CM = dataset.corr(numeric_only=True).abs().style.background_gradient(axis=None, cmap='Reds')
+    sns.heatmap(CM.data, annot=True, fmt=".2f", cmap='Reds')
+    plt.title('Feature Correlation Matrix')
+    plt.show()
+    return CM
 
 # Feature correlation analysis
 print(f"\n\n> Feature correlation analysis")
-plt.figure(figsize=(12, 10))
-correlation_matrix = dataset.corr(numeric_only=True).abs().style.background_gradient(axis=None, cmap='Reds')
-sns.heatmap(correlation_matrix.data, annot=True, fmt=".2f", cmap='Reds')
-plt.title('Feature Correlation Matrix')
-plt.show()
+CM = drawCorrelationMatrix(dataset)
+print(f"\n\n> Arbitrarily considering features with correlation index higher than 0.9 as highly correlated, we can see that the following pairs are highly correlated:")
+pairs = []
+for i in range(len(CM.data.columns)):
+    for j in range(i):
+        if CM.data.iloc[i, j] > 0.9 and i != j:
+            pair = (CM.data.columns[i], CM.data.columns[j], CM.data.iloc[i, j])
+            pairs.append(pair)
+            print(f"> {pair[0]} and {pair[1]} with correlation index {pair[2]:.2f}")
 
+print(f"\n> Drop highly correlated features and recompute correlation matrix")
+for pair in pairs:
+    feature_to_drop = pair[1]
+    if feature_to_drop in dataset.columns:
+        dataset = dataset.drop(columns=[feature_to_drop])
+        print(f"> Dropped feature: {feature_to_drop}")
 
-
-
-
-
-
+print(f"\n\n> Optimized correlation matrix:\n{drawCorrelationMatrix(dataset).data}")
 
 
 # Split the dataset into features and target variable
 print(f"\n\n> Split dataset into features and target variable")
 target_name = "class"
 X = dataset.drop(columns=[target_name])
-Y = dataset[target_name]
+y = dataset[target_name]
