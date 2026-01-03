@@ -14,11 +14,12 @@ print(f"Shape: {dataset.shape}")
 ## Data Preprocessing
 # Drop ID columns that aren't useful for classification and move class column to the end (just for convenience)
 columnsToDrop = ['obj_ID', 'run_ID', 'rerun_ID', 'cam_col', 'field_ID', 'spec_obj_ID']
-to_move = ['class']
+toMove = ['class']
 dataset = dataset.drop(columns=columnsToDrop)
 print(f"\n> Dropping ID columns from dataset...\n> New Shape: {dataset.shape}")
-new = dataset.columns.difference(to_move).to_list()+to_move
+new = dataset.columns.difference(toMove).to_list()+toMove
 dataset = dataset[new]
+
 
 # Handle missing values
 print(f"\n\n> Check for N/A values since they make the dataset more sparse and therefore hinder the accuracy of the models")
@@ -27,7 +28,7 @@ print(f'Duplicated rows: {dataset.duplicated().any()}')
 print(f"\n\n> No N/A values or duplicated rows found in the dataset")
 
 
-# Check for outliars
+# Check for 'dirty' data (not outliers yet)
 print(f"\n\n> Check for outliars in the dataset")
 print(dataset.describe())
 print(f"\n> Deleting outliars...")
@@ -38,27 +39,33 @@ print(f"\n> Outliers removed. New Shape: {dataset.shape}\n> Check for outliars a
 print(dataset.describe())
 
 
+# Check class distribution
+print(f"\n\n> Class distribution (percentage):\n{dataset['class'].value_counts(normalize=True).mul(100).round(2)}")
+datasetToPlot = dataset.drop(columns=['MJD', 'plate', 'fiber_ID'])
+datasetMerge = datasetToPlot.melt(id_vars=['class'], var_name='variable', value_name='value')
+sns.displot(
+    data=datasetMerge,
+    x='value', 
+    col='variable',
+    hue='class',
+    kind='hist',
+    height=4,
+    aspect=2,
+    kde=True,
+    legend=True,
+    col_wrap=2,
+    facet_kws={'sharex': False, 'sharey': False},
+    common_bins=False
+)
+plt.show()
+
+
 # Encoding of categorical features
 # 'class', the target feature, is categorical (GALAXY, STAR, QSO), but it is the only one
 print(f"\n\n> Encoding categorical features...")
 label_encoder = LabelEncoder()
 dataset['class'] = label_encoder.fit_transform(dataset['class'])
 print(dataset.head())
-
-
-# Split the dataset into features and target variable
-print(f"\n\n> Split dataset into features and target variable")
-target_name = "class"
-X = dataset.drop(columns=[target_name])
-Y = dataset[target_name]
-
-
-# Check class distribution
-print(f"\n\n> Class distribution (percentage):\n{Y.value_counts(normalize=True).mul(100).round(2)}")
-X.hist(bins=30, figsize=(15, 10)) 
-plt.suptitle('Feature Distributions')
-plt.tight_layout()
-plt.show()
 
 
 # Feature correlation analysis
@@ -68,3 +75,14 @@ correlation_matrix = dataset.corr(numeric_only=True).abs().style.background_grad
 sns.heatmap(correlation_matrix.data, annot=True, fmt=".2f", cmap='Reds')
 plt.title('Feature Correlation Matrix')
 plt.show()
+
+
+# Outlier detection
+
+
+
+# Split the dataset into features and target variable
+print(f"\n\n> Split dataset into features and target variable")
+target_name = "class"
+X = dataset.drop(columns=[target_name])
+Y = dataset[target_name]
