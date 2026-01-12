@@ -149,7 +149,7 @@ X_partial_train, X_val, y_partial_train, y_val = train_test_split(X_train, y_tra
 # KNN training
 accuracies = []
 max_k = 50
-print(f"\n\n>KNN training: we will evaluate KNearestNeighbors classifiers with K ranging from 1 to {max_k}")
+print(f"\n\n> KNN training: we will evaluate KNearestNeighbors classifiers with K ranging from 1 to {max_k}")
 for n_neighbors in range(1, max_k + 1):
     KNN = KNeighborsClassifier(n_neighbors=n_neighbors)
 
@@ -163,13 +163,15 @@ for n_neighbors in range(1, max_k + 1):
     accuracy = np.mean(pred_val == y_val)
     accuracies.append(accuracy)
     if n_neighbors % 10 == 0:
-        print(f"\tk={n_neighbors}, Accuracy={accuracy:.4f}")
+        print(f"\t[batch {n_neighbors / 10}] k={n_neighbors}, Accuracy={accuracy:.4f}")
 
 # Evaluate which was the K that fit best
 best_k = np.argmax(accuracies) + 1
 best_accuracy = max(accuracies)
 
 # Retrain with that K to show graphs related to this iteration
+print(f"> Best validation accuracy: {best_accuracy:.4f} achieved at k = {best_k}")
+print(f"> Retrain KNN with best k = {best_k}")
 KNN = KNeighborsClassifier(best_k)
 KNN.fit(X_train, y_train)
 pred_val = KNN.predict(X_val)
@@ -178,7 +180,6 @@ pred_val = KNN.predict(X_val)
 # Create figure to show accuracy evolution graph and confusion matrix for best KNN 
 # iteration side by side
 fig = plt.figure(figsize=(16, 6))
-print(f"Best validation accuracy: {best_accuracy:.4f} achieved at k = {best_k}")
 ax1 = fig.add_subplot(1, 2, 1)  # 1 row, 2 columns, plot 1
 ax1.plot(range(1, len(accuracies)+1), accuracies, marker='o', markersize=4, color='steelblue')
 ax1.set_title(f'Validation Accuracy vs. k (Best k = {best_k})', fontsize=14)
@@ -198,10 +199,10 @@ ax1.text(
     bbox=dict(boxstyle="round", facecolor="wheat")
 )
 
-# Subplot 2: Confusion Matrix
+# Subplot 2: Confusion Matrix of best KNN
 cm = confusion_matrix(y_val, pred_val)
-ax2 = fig.add_subplot(1, 2, 2)  # 1 row, 2 columns, plot 2
-disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=['Class 0', 'Class 1', 'Class 2'])
+ax2 = fig.add_subplot(1, 2, 2)
+disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=['GALAXY', 'STAR', 'QSO'])
 disp.plot(ax=ax2, cmap='Blues', values_format='d')
 ax2.set_title('Confusion Matrix (Validation Set)')
 plt.tight_layout()
@@ -214,13 +215,13 @@ precision = sklearn.metrics.precision_score(y_val, pred_val, average="macro")
 print(f"\nAccuracy: {accuracy}")
 print(f"Precision: {precision}")
 print(f"Recall: {recall}")
-print(f"\n> KNN evaluation completed.\nAs we can see this model does not well at all for this classification task: best k is shown to be {best_k} (KNN did no classification at all)")
+print(f"\n> KNN evaluation completed. As we can see this model does not well at all for this classification task: best k is shown to be {best_k} (KNN did no classification at all)")
 
 
 # Random Forest Classifier training
-max_estimators = 50
+max_estimators = 70
 accuracies = []
-print(f"\n\n>Random Forest Classifier training: we will evaluate Random Forest classifiers with n_estimators ranging from 1 to {max_estimators}")
+print(f"\n\n> Random Forest Classifier training: we will evaluate Random Forest classifiers with n_estimators ranging from 1 to {max_estimators}")
 for n_estimators in range(1, max_estimators + 1):
     RF = RandomForestClassifier(n_estimators=n_estimators, random_state=randomState)
     RF.fit(X_train, y_train)
@@ -228,11 +229,13 @@ for n_estimators in range(1, max_estimators + 1):
 
     accuracies.append(np.mean(pred_val == y_val))
     if n_estimators % 10 == 0:
-        print(f"\tn_estimators={n_estimators}, Accuracy={accuracies[-1]:.4f}")
+        print(f"\t[batch {n_estimators / 10}] n_estimators={n_estimators}, Accuracy={accuracies[-1]:.4f}")
 
 # Evaluate which was the n_estimators that fit best and train RFC with that
 best_estimator = np.argmax(accuracies) + 1
 best_accuracy = max(accuracies)
+print(f"> Best validation accuracy: {best_accuracy:.4f} achieved at n_estimators = {best_estimator}")
+print(f"> Retrain Random Forest with best n_estimators = {best_estimator}")
 RF = RandomForestClassifier(n_estimators=best_estimator, random_state=randomState)
 RF.fit(X_train, y_train)
 pred_val = RF.predict(X_val)
@@ -244,7 +247,7 @@ print(f"Best validation accuracy: {best_accuracy:.4f} achieved at n_estimators =
 ax1 = fig.add_subplot(1, 2, 1)
 ax1.plot(range(1, len(accuracies)+1), accuracies, marker='o', markersize=4, color='steelblue')
 ax1.set_title(f'Validation Accuracy vs. n_estimators (Best n_estimators = {best_estimator})', fontsize=14)
-ax1.set_xlabel('Number of Neighbors (k)')
+ax1.set_xlabel('Number of Estimators (n_estimators)')
 ax1.set_ylabel('Validation Accuracy')
 ax1.grid(True, alpha=0.3)
 ax1.axvline(best_estimator, color='red', linestyle='--', linewidth=2, label=f'Best n_estimators = {best_estimator}')
@@ -263,7 +266,7 @@ ax1.text(
 # Subplot 2: Confusion Matrix
 cm = confusion_matrix(y_val, pred_val)
 ax2 = fig.add_subplot(1, 2, 2)  # 1 row, 2 columns, plot 2
-disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=['Class 0', 'Class 1', 'Class 2'])
+disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=['GALAXY', 'STAR', 'QSO'])
 disp.plot(ax=ax2, cmap='Blues', values_format='d')
 ax2.set_title('Confusion Matrix (Validation Set)')
 plt.tight_layout()
@@ -276,3 +279,4 @@ precision = sklearn.metrics.precision_score(y_val, pred_val, average="macro")
 print(f"\nAccuracy: {accuracy:.4f}")
 print(f"Precision: {precision:.4f}")
 print(f"Recall: {recall:.4f}")
+print(f"\n> RFC evaluation completed. Random Forest Classifier seems to perform extremely well for this classification task: best n_estimators is shown to be {best_estimator}")
