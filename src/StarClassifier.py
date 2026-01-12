@@ -10,6 +10,11 @@ from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn import svm
 import sklearn.metrics
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+
+
+randomState = 42
 
 
 # Import the Star Classification Dataset and print its shape
@@ -117,7 +122,7 @@ print(f"Shape of features: {X.shape}")
 
 ## Split the dataset into training and testing sets (80% train, 20% test)
 print(f"\n\n> Split the dataset into Training and Testing sets (80%, 20%)")
-X_rawTrain, X_rawTest, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+X_rawTrain, X_rawTest, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=randomState)
 
 
 
@@ -138,42 +143,27 @@ X_test = pd.DataFrame(X_test_scaled, columns=X_test.columns)
 
 
 ## Model Training and Evaluation
-print(f"\n\n> Model Training and Evaluation\n> Models to be implemented:\nKNN\nLR\nRANDOM FOREST\nSVM")
-KNN = KNeighborsClassifier(),
-LR = LinearRegression(),
-RF = RandomForestClassifier(),
-SVM = svm.SVC()
+print(f"\n\n> Model Training and Evaluation\n> Models to be implemented:\n1. KNeighborsClassifier\n2. RandomForestClassifier\n3. Support Vector Machine (SVM)")
+X_partial_train, X_val, y_partial_train, y_val = train_test_split(X_train, y_train, test_size=0.2, random_state=randomState)
 
 # KNN training
 accuracies = []
 max_k = 50
-X_partial_train, X_val, y_partial_train, y_val = train_test_split(X_train, y_train, test_size=0.2, random_state=42)
-
-print(f"\n\n> KNN training: we will evaluate KNearestNeighbors classifiers with K ranging from 1 to {max_k}")
+print(f"\n\n>KNN training: we will evaluate KNearestNeighbors classifiers with K ranging from 1 to {max_k}")
 for n_neighbors in range(1, max_k + 1):
     KNN = KNeighborsClassifier(n_neighbors=n_neighbors)
 
-    # Fit model to data
-    # the model will be trained using the training data X_train and the labels y_train.
+    # Fit model
     KNN.fit(X_train, y_train)
 
-
-    # VALIDATION
-    # "KNN" represents the K-Nearest Neighbors model that we trained earlier.
-    # predict() is a method to make predictions using the trained model.
-    # The array pred_val will contain the model's predictions for the validation data (X_val).
+    # Validation 
     pred_val = KNN.predict(X_val)
 
-
-    # CALCULATE ACCURACY
-    # "pred_val == y_val": This expression creates a boolean array where each element
-    # is True if the prediction matches the true label for the corresponding observation in the validation data, otherwise it is False.
-    # "np.mean(...)" calculates the fraction of "True" elements in a boolean array, thus representing the percentage of correct predictions out of the total predictions.
-    # y_val: Ground truth for validation data. Represents the true labels in the validation data.
+    # Accuracy calculation
     accuracy = np.mean(pred_val == y_val)
     accuracies.append(accuracy)
     if n_neighbors % 10 == 0:
-        print(f"   k={n_neighbors}, Accuracy={accuracy:.4f}")
+        print(f"\tk={n_neighbors}, Accuracy={accuracy:.4f}")
 
 # Evaluate which was the K that fit best
 best_k = np.argmax(accuracies) + 1
@@ -184,8 +174,6 @@ KNN = KNeighborsClassifier(best_k)
 KNN.fit(X_train, y_train)
 pred_val = KNN.predict(X_val)
 
-import matplotlib.pyplot as plt
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 
 # Create figure to show accuracy evolution graph and confusion matrix for best KNN 
 # iteration side by side
@@ -216,17 +204,6 @@ ax2 = fig.add_subplot(1, 2, 2)  # 1 row, 2 columns, plot 2
 disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=['Class 0', 'Class 1', 'Class 2'])
 disp.plot(ax=ax2, cmap='Blues', values_format='d')
 ax2.set_title('Confusion Matrix (Validation Set)')
-
-# Calculating the Confusion Matrix
-# Calculate the confusion matrix based on the real labels "y_val" and the predicted ones by the KNN model "pred_val"
-print("\n\nHere is the confusion matrix for the best-fit KNN classifier")
-print("The total amount of data predicted as 0:", sum(pred_val==0))
-print("The total amount of data that is 0 in reality:", sum(y_val==0))
-print("The total amount of data predicted as 0:", sum(pred_val==1))
-print("The total amount of data that is 0 in reality:", sum(y_val==1))
-print("The total amount of data predicted as 0:", sum(pred_val==2))
-print("The total amount of data that is 0 in reality:", sum(y_val==2))
-
 plt.tight_layout()
 plt.show()
 
@@ -234,6 +211,68 @@ plt.show()
 accuracy = sklearn.metrics.accuracy_score(y_val, pred_val)
 recall = sklearn.metrics.recall_score(y_val, pred_val, average="macro")
 precision = sklearn.metrics.precision_score(y_val, pred_val, average="macro")
-print(f"Accuracy: {accuracy}")
+print(f"\nAccuracy: {accuracy}")
 print(f"Precision: {precision}")
 print(f"Recall: {recall}")
+print(f"\n> KNN evaluation completed.\nAs we can see this model does not well at all for this classification task: best k is shown to be {best_k} (KNN did no classification at all)")
+
+
+# Random Forest Classifier training
+max_estimators = 50
+accuracies = []
+print(f"\n\n>Random Forest Classifier training: we will evaluate Random Forest classifiers with n_estimators ranging from 1 to {max_estimators}")
+for n_estimators in range(1, max_estimators + 1):
+    RF = RandomForestClassifier(n_estimators=n_estimators, random_state=randomState)
+    RF.fit(X_train, y_train)
+    pred_val = RF.predict(X_val)
+
+    accuracies.append(np.mean(pred_val == y_val))
+    if n_estimators % 10 == 0:
+        print(f"\tn_estimators={n_estimators}, Accuracy={accuracies[-1]:.4f}")
+
+# Evaluate which was the n_estimators that fit best and train RFC with that
+best_estimator = np.argmax(accuracies) + 1
+best_accuracy = max(accuracies)
+RF = RandomForestClassifier(n_estimators=best_estimator, random_state=randomState)
+RF.fit(X_train, y_train)
+pred_val = RF.predict(X_val)
+
+# Create figure to show accuracy evolution graph and confusion matrix for best RFC
+# iteration side by side
+fig = plt.figure(figsize=(16, 6))
+print(f"Best validation accuracy: {best_accuracy:.4f} achieved at n_estimators = {best_estimator}")
+ax1 = fig.add_subplot(1, 2, 1)
+ax1.plot(range(1, len(accuracies)+1), accuracies, marker='o', markersize=4, color='steelblue')
+ax1.set_title(f'Validation Accuracy vs. n_estimators (Best n_estimators = {best_estimator})', fontsize=14)
+ax1.set_xlabel('Number of Neighbors (k)')
+ax1.set_ylabel('Validation Accuracy')
+ax1.grid(True, alpha=0.3)
+ax1.axvline(best_estimator, color='red', linestyle='--', linewidth=2, label=f'Best n_estimators = {best_estimator}')
+ax1.scatter(best_estimator, accuracies[best_estimator-1], color='red', s=100, zorder=5)
+ax1.legend()
+ax1.text(
+    0.02, 
+    0.98, 
+    f'Best accuracy: {best_accuracy:.4f}', 
+    transform=ax1.transAxes, 
+    fontsize=12, 
+    verticalalignment='top', 
+    bbox=dict(boxstyle="round", facecolor="wheat")
+)
+
+# Subplot 2: Confusion Matrix
+cm = confusion_matrix(y_val, pred_val)
+ax2 = fig.add_subplot(1, 2, 2)  # 1 row, 2 columns, plot 2
+disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=['Class 0', 'Class 1', 'Class 2'])
+disp.plot(ax=ax2, cmap='Blues', values_format='d')
+ax2.set_title('Confusion Matrix (Validation Set)')
+plt.tight_layout()
+plt.show()
+
+# Calculate accuracy, recall, and precision with scikit-learn
+accuracy = sklearn.metrics.accuracy_score(y_val, pred_val)
+recall = sklearn.metrics.recall_score(y_val, pred_val, average="macro")
+precision = sklearn.metrics.precision_score(y_val, pred_val, average="macro")
+print(f"\nAccuracy: {accuracy:.4f}")
+print(f"Precision: {precision:.4f}")
+print(f"Recall: {recall:.4f}")
