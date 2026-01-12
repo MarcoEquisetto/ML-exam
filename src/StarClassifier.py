@@ -163,7 +163,7 @@ for n_neighbors in range(1, max_k + 1):
     accuracy = np.mean(pred_val == y_val)
     accuracies.append(accuracy)
     if n_neighbors % 10 == 0:
-        print(f"\t[batch {n_neighbors / 10}] k={n_neighbors}, Accuracy={accuracy:.4f}")
+        print(f"\t[batch {n_neighbors // 10}] k={n_neighbors}, Accuracy={accuracy:.4f}")
 
 # Evaluate which was the K that fit best
 best_k = np.argmax(accuracies) + 1
@@ -229,7 +229,8 @@ for n_estimators in range(1, max_estimators + 1):
 
     accuracies.append(np.mean(pred_val == y_val))
     if n_estimators % 10 == 0:
-        print(f"\t[batch {n_estimators / 10}] n_estimators={n_estimators}, Accuracy={accuracies[-1]:.4f}")
+        print(f"\t[batch {n_estimators // 10}] n_estimators={n_estimators}, Accuracy={accuracies[-1]:.4f}")
+
 
 # Evaluate which was the n_estimators that fit best and train RFC with that
 best_estimator = np.argmax(accuracies) + 1
@@ -239,6 +240,7 @@ print(f"> Retrain Random Forest with best n_estimators = {best_estimator}")
 RF = RandomForestClassifier(n_estimators=best_estimator, random_state=randomState)
 RF.fit(X_train, y_train)
 pred_val = RF.predict(X_val)
+
 
 # Create figure to show accuracy evolution graph and confusion matrix for best RFC
 # iteration side by side
@@ -263,6 +265,7 @@ ax1.text(
     bbox=dict(boxstyle="round", facecolor="wheat")
 )
 
+
 # Subplot 2: Confusion Matrix
 cm = confusion_matrix(y_val, pred_val)
 ax2 = fig.add_subplot(1, 2, 2)  # 1 row, 2 columns, plot 2
@@ -271,6 +274,7 @@ disp.plot(ax=ax2, cmap='Blues', values_format='d')
 ax2.set_title('Confusion Matrix (Validation Set)')
 plt.tight_layout()
 plt.show()
+
 
 # Calculate accuracy, recall, and precision with scikit-learn
 accuracy = sklearn.metrics.accuracy_score(y_val, pred_val)
