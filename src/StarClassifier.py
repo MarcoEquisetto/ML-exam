@@ -13,7 +13,7 @@ import sklearn.metrics
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score, f1_score
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 
-
+# Define random state var (the same one will be used in any method that requires it)
 randomState = 42
 
 def drawCorrelationMatrix(dataset):
@@ -30,19 +30,19 @@ def plotQualityCheckGraph(scores, bestHyperparameter, bestAccuracy):
     fig = plt.figure(figsize=(16, 6))
     ax1 = fig.add_subplot(1, 2, 1)  # 1 row, 2 columns, plot 1
     ax1.plot(range(1, len(scores)+1), scores, marker='o', markersize=4, color='steelblue')
-    ax1.set_title(f'Validation Accuracy vs. k (Best k = {bestHyperparameter})', fontsize=14)
-    ax1.set_xlabel('Number of Neighbors (k)')
-    ax1.set_ylabel('Validation Accuracy')
+    ax1.set_title(f'F1-Score vs. HyperParameter (Best HP = {bestHyperparameter})', fontsize=14)
+    ax1.set_xlabel('HyperParameter value')
+    ax1.set_ylabel('F1-Score')
     ax1.grid(True, alpha=0.3)
-    ax1.axvline(bestHyperparameter, color='red', linestyle='--', linewidth=2, label=f'Best k = {bestHyperparameter}')
+    ax1.axvline(bestHyperparameter, color='red', linestyle='--', linewidth=2, label=f'Best HyperParameter = {bestHyperparameter}')
     ax1.scatter(bestHyperparameter, scores[bestHyperparameter-1], color='red', s=100, zorder=5)
     ax1.legend()
     ax1.text(
         0.02, 
         0.98, 
-        f'Best accuracy: {bestAccuracy:.4f}', 
+        f'Best F1-Score: {bestAccuracy:.4f}', 
         transform=ax1.transAxes, 
-        fontsize=12, 
+        fontsize=12,
         verticalalignment='top', 
         bbox=dict(boxstyle="round", facecolor="wheat")
     )
@@ -58,7 +58,7 @@ def plotQualityCheckGraph(scores, bestHyperparameter, bestAccuracy):
 
 
 # Import the Star Classification Dataset and print its shape
-dataset = pd.read_csv('./dataset/star_classification.csv')
+dataset = pd.read_csv('../dataset/star_classification.csv')
 print("\n\n> Star Classification Dataset")
 print(dataset)
 print(f"Shape: {dataset.shape}")
@@ -187,6 +187,7 @@ for n_neighbors in Ks:
     KNN = KNeighborsClassifier(n_neighbors=n_neighbors)
     scores = cross_val_score(KNN, X_train, y_train, cv=5, scoring='f1_macro')
     KNNcrossValidationScores.append(scores.mean())
+    print(f"KNN with k = {n_neighbors} has CV score = {scores.mean()}")
 
 # Evaluate which was the K that fit best
 bestK = Ks[np.argmax(KNNcrossValidationScores)]
@@ -223,6 +224,8 @@ for n_estimators in estimators:
     RF = RandomForestClassifier(n_estimators=n_estimators, random_state=randomState)
     scores = cross_val_score(RF, X_train, y_train, cv=5, scoring='f1_macro')
     RFcrossValidationScores.append(scores.mean())
+    print(f"RFC with n_estimators = {n_estimators} has CV score = {scores.mean()}")
+
 
 bestEstimator = estimators[np.argmax(RFcrossValidationScores)]
 
