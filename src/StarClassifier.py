@@ -24,18 +24,18 @@ def drawCorrelationMatrix(dataset):
     plt.show()
     return CM
 
-def plotQualityCheckGraph(accuracies, bestHyperparameter, bestAccuracy):
+def plotQualityCheckGraph(scores, bestHyperparameter, bestAccuracy):
     # Create figure to show accuracy evolution graph and confusion matrix for best KNN 
     # iteration side by side
     fig = plt.figure(figsize=(16, 6))
     ax1 = fig.add_subplot(1, 2, 1)  # 1 row, 2 columns, plot 1
-    ax1.plot(range(1, len(accuracies)+1), accuracies, marker='o', markersize=4, color='steelblue')
+    ax1.plot(range(1, len(scores)+1), scores, marker='o', markersize=4, color='steelblue')
     ax1.set_title(f'Validation Accuracy vs. k (Best k = {bestHyperparameter})', fontsize=14)
     ax1.set_xlabel('Number of Neighbors (k)')
     ax1.set_ylabel('Validation Accuracy')
     ax1.grid(True, alpha=0.3)
     ax1.axvline(bestHyperparameter, color='red', linestyle='--', linewidth=2, label=f'Best k = {bestHyperparameter}')
-    ax1.scatter(bestHyperparameter, accuracies[bestHyperparameter-1], color='red', s=100, zorder=5)
+    ax1.scatter(bestHyperparameter, scores[bestHyperparameter-1], color='red', s=100, zorder=5)
     ax1.legend()
     ax1.text(
         0.02, 
@@ -181,24 +181,22 @@ X_partial_train, X_val, y_partial_train, y_val = train_test_split(X_train, y_tra
 
 # KNN training
 Ks = range(1, 51)
-crossValidationScores = []
-print(f"\n\n> KNN training: evaluate KNearestNeighbors classifiers with K ranging from 1 to {max(Ks)} using 5-Fold Cross Validation and F1-score (macro) as evaluation metric")
+KNNcrossValidationScores = []
+print(f"\n\n> KNN training: evaluate KNearestNeighbors classifiers with K ranging from 1 to {max(Ks)} using 5-Fold Cross Validation and F1-score (macro) as metrics")
 for n_neighbors in Ks:
     KNN = KNeighborsClassifier(n_neighbors=n_neighbors)
     scores = cross_val_score(KNN, X_train, y_train, cv=5, scoring='f1_macro')
-    crossValidationScores.append(scores.mean())
+    KNNcrossValidationScores.append(scores.mean())
 
 # Evaluate which was the K that fit best
-bestK =  Ks[np.argmax(crossValidationScores)]
+bestK = Ks[np.argmax(KNNcrossValidationScores)]
 
 # Retrain with that K to show graphs related to this iteration
-print(f"> Best k value for KNN found to be {bestK} with F1-score = {max(crossValidationScores):.4f}... Retraining KNN with this k to show related graphs")
-
+print(f"> Best k value for KNN found to be {bestK} with F1-score = {max(KNNcrossValidationScores):.4f}... Retraining KNN with best k to show related graphs")
 KNN = KNeighborsClassifier(bestK)
 KNN.fit(X_train, y_train)
 predVal = KNN.predict(X_val)
 
-# Calculate accuracy, recall, and precision with scikit-learn
 accuracy = sklearn.metrics.accuracy_score(y_val, predVal)
 recall = sklearn.metrics.recall_score(y_val, predVal, average="macro")
 precision = sklearn.metrics.precision_score(y_val, predVal, average="macro")
@@ -208,44 +206,31 @@ mse = mean_squared_error(y_val, predVal)
 mae = mean_absolute_error(y_val, predVal)
 r2 = r2_score(y_val, predVal)
 
-plotQualityCheckGraph(crossValidationScores, bestK, max(crossValidationScores))
+plotQualityCheckGraph(KNNcrossValidationScores, bestK, max(KNNcrossValidationScores))
 print(f"\n--- Classification Metrics ---")
-print(f"Accuracy:  {accuracy:.4f}")
-print(f"Precision: {precision:.4f}")
-print(f"Recall:    {recall:.4f}")
-print(f"F1 Score:  {f1:.4f}")
+print(f"Accuracy: {accuracy:.4f}\nPrecision: {precision:.4f},\nRecall: {recall:.4f}\nF1 Score:  {f1:.4f}")
 
-print(f"\n--- Regression Metrics (on class labels) ---")
-print(f"MSE:       {mse:.4f}")
-print(f"MAE:       {mae:.4f}")
-print(f"R2 Score:  {r2:.4f}")
-print(f"\n> KNN evaluation completed. As we can see this model does not well at all for this classification task: best k is shown to be {bestK} (KNN did no classification at all)")
+print(f"\n--- Regression Metrics ---")
+print(f"MSE: {mse:.4f}\nMAE: {mae:.4f}\nR2 Score:  {r2:.4f}")
+print(f"\n> KNN evaluation completed. Best k is shown to be {bestK}")
 
 
 # Random Forest Classifier training
-max_estimators = 60
-accuracies = []
-print(f"\n\n> Random Forest Classifier training: we will evaluate Random Forest classifiers with n_estimators ranging from 1 to {max_estimators}")
-for n_estimators in range(1, max_estimators + 1):
+estimators = range(1, 51)
+RFcrossValidationScores = []
+print(f"\n\n> Random Forest Classifier training: evaluate Random Forest classifiers with n_estimators ranging from 1 to {max(estimators)} using 5-Fold Cross Validation and F1-score (macro) as metrics")
+for n_estimators in estimators:
     RF = RandomForestClassifier(n_estimators=n_estimators, random_state=randomState)
-    RF.fit(X_train, y_train)
-    predVal = RF.predict(X_val)
+    scores = cross_val_score(RF, X_train, y_train, cv=5, scoring='f1_macro')
+    RFcrossValidationScores.append(scores.mean())
 
-    accuracies.append(np.mean(predVal == y_val))
-    if n_estimators % 10 == 0:
-        print(f"\t[batch {n_estimators // 10}] n_estimators={n_estimators}, Accuracy={accuracies[-1]:.4f}")
+bestEstimator = estimators[np.argmax(RFcrossValidationScores)]
 
-
-# Evaluate which was the n_estimators that fit best and train RFC with that
-bestEstimator = np.argmax(accuracies) + 1
-bestAccuracy = max(accuracies)
-print(f"> Best validation accuracy: {bestAccuracy:.4f} achieved at n_estimators = {bestEstimator}")
-print(f"> Retrain Random Forest with best n_estimators = {bestEstimator}")
+print(f"> Best validation F1-score: {max(RFcrossValidationScores):.4f} achieved at n_estimators = {bestEstimator}... Retrain Random Forest with best n_estimators to show related graphs")
 RF = RandomForestClassifier(n_estimators=bestEstimator, random_state=randomState)
 RF.fit(X_train, y_train)
 predVal = RF.predict(X_val)
 
-# Calculate accuracy, recall, and precision with scikit-learn
 accuracy = sklearn.metrics.accuracy_score(y_val, predVal)
 recall = sklearn.metrics.recall_score(y_val, predVal, average="macro")
 precision = sklearn.metrics.precision_score(y_val, predVal, average="macro")
@@ -255,15 +240,10 @@ mse = mean_squared_error(y_val, predVal)
 mae = mean_absolute_error(y_val, predVal)
 r2 = r2_score(y_val, predVal)
 
-plotQualityCheckGraph(accuracies, bestEstimator, bestAccuracy)
+plotQualityCheckGraph(RFcrossValidationScores, bestEstimator, max(RFcrossValidationScores))
 print(f"\n--- Classification Metrics ---")
-print(f"Accuracy:  {accuracy:.4f}")
-print(f"Precision: {precision:.4f}")
-print(f"Recall:    {recall:.4f}")
-print(f"F1 Score:  {f1:.4f}")
+print(f"Accuracy: {accuracy:.4f}\nPrecision: {precision:.4f},\nRecall: {recall:.4f}\nF1 Score:  {f1:.4f}")
 
-print(f"\n--- Regression Metrics (on class labels) ---")
-print(f"MSE:       {mse:.4f}")
-print(f"MAE:       {mae:.4f}")
-print(f"R2 Score:  {r2:.4f}")
-print(f"\n> RFC evaluation completed. Random Forest Classifier seems to perform extremely well for this classification task: best n_estimators is shown to be {bestEstimator}")
+print(f"\n--- Regression Metrics ---")
+print(f"MSE: {mse:.4f}\nMAE: {mae:.4f}\nR2 Score:  {r2:.4f}")
+print(f"\n> RFC evaluation completed")
