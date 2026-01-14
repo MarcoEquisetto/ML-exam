@@ -1,3 +1,7 @@
 Outliers are unreasonable values, with normal outlier detection the entire dataset is deleted, showing data has strange distribution but is valid and should not be deleted 
 
 Was originally using accuracy as metric, changed to cross validation and F1 score for a more telling evaluation
+
+
+decreased amount of K and estimators tested to 1 - 30 (included)
+

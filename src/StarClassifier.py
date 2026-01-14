@@ -2,17 +2,15 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+from sklearn.base import accuracy_score, precision_score, recall_score
 from sklearn.discriminant_analysis import StandardScaler
 from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.preprocessing import LabelEncoder
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn import svm
-import sklearn.metrics
-from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score, f1_score
+from sklearn.metrics import f1_score
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
-
 
 randomState = 42
 
@@ -25,22 +23,20 @@ def drawCorrelationMatrix(dataset):
     return CM
 
 def plotQualityCheckGraph(scores, bestHyperparameter, bestAccuracy):
-    # Create figure to show accuracy evolution graph and confusion matrix for best KNN 
-    # iteration side by side
     fig = plt.figure(figsize=(16, 6))
     ax1 = fig.add_subplot(1, 2, 1)  # 1 row, 2 columns, plot 1
     ax1.plot(range(1, len(scores)+1), scores, marker='o', markersize=4, color='steelblue')
-    ax1.set_title(f'Validation Accuracy vs. k (Best k = {bestHyperparameter})', fontsize=14)
-    ax1.set_xlabel('Number of Neighbors (k)')
-    ax1.set_ylabel('Validation Accuracy')
+    ax1.set_title(f'F1-Score (macro) vs. HyperParameter (Best HP = {bestHyperparameter})', fontsize=14)
+    ax1.set_xlabel('HyperParameter Value')
+    ax1.set_ylabel('F1-Score (macro)')
     ax1.grid(True, alpha=0.3)
-    ax1.axvline(bestHyperparameter, color='red', linestyle='--', linewidth=2, label=f'Best k = {bestHyperparameter}')
+    ax1.axvline(bestHyperparameter, color='red', linestyle='--', linewidth=2, label=f'Best Hyperparameter = {bestHyperparameter}')
     ax1.scatter(bestHyperparameter, scores[bestHyperparameter-1], color='red', s=100, zorder=5)
     ax1.legend()
     ax1.text(
         0.02, 
         0.98, 
-        f'Best accuracy: {bestAccuracy:.4f}', 
+        f'Best HyperParameter: {bestAccuracy:.4f}', 
         transform=ax1.transAxes, 
         fontsize=12, 
         verticalalignment='top', 
@@ -180,49 +176,43 @@ print(f"\n\n> Model Training and Evaluation\n> Models to be implemented:\n1. KNe
 X_partial_train, X_val, y_partial_train, y_val = train_test_split(X_train, y_train, test_size=0.2, random_state=randomState)
 
 # KNN training
-Ks = range(1, 51)
+Ks = range(1, 31)
 KNNcrossValidationScores = []
 print(f"\n\n> KNN training: evaluate KNearestNeighbors classifiers with K ranging from 1 to {max(Ks)} using 5-Fold Cross Validation and F1-score (macro) as metrics")
 for n_neighbors in Ks:
     KNN = KNeighborsClassifier(n_neighbors=n_neighbors)
     scores = cross_val_score(KNN, X_train, y_train, cv=5, scoring='f1_macro')
     KNNcrossValidationScores.append(scores.mean())
+    print(f"> n_neighbors = {n_neighbors}, F1-score (mean of batch) = {scores.mean():.4f}")
 
 # Evaluate which was the K that fit best
 bestK = Ks[np.argmax(KNNcrossValidationScores)]
 
 # Retrain with that K to show graphs related to this iteration
-print(f"> Best k value for KNN found to be {bestK} with F1-score = {max(KNNcrossValidationScores):.4f}... Retraining KNN with best k to show related graphs")
+print(f"> Best k value for KNN found to be {bestK} with F1-score = {max(KNNcrossValidationScores):.4f}: Retraining KNN with best k to show related graphs")
 KNN = KNeighborsClassifier(bestK)
 KNN.fit(X_train, y_train)
 predVal = KNN.predict(X_val)
 
-accuracy = sklearn.metrics.accuracy_score(y_val, predVal)
-recall = sklearn.metrics.recall_score(y_val, predVal, average="macro")
-precision = sklearn.metrics.precision_score(y_val, predVal, average="macro")
-f1 = sklearn.metrics.f1_score(y_val, predVal, average="macro")
-
-mse = mean_squared_error(y_val, predVal)
-mae = mean_absolute_error(y_val, predVal)
-r2 = r2_score(y_val, predVal)
+accuracy = accuracy_score(y_val, predVal)
+recall = recall_score(y_val, predVal, average="macro")
+precision = precision_score(y_val, predVal, average="macro")
+f1 = f1_score(y_val, predVal, average="macro")
 
 plotQualityCheckGraph(KNNcrossValidationScores, bestK, max(KNNcrossValidationScores))
-print(f"\n--- Classification Metrics ---")
 print(f"Accuracy: {accuracy:.4f}\nPrecision: {precision:.4f},\nRecall: {recall:.4f}\nF1 Score:  {f1:.4f}")
 
-print(f"\n--- Regression Metrics ---")
-print(f"MSE: {mse:.4f}\nMAE: {mae:.4f}\nR2 Score:  {r2:.4f}")
-print(f"\n> KNN evaluation completed. Best k is shown to be {bestK}")
 
 
 # Random Forest Classifier training
-estimators = range(1, 51)
+estimators = range(1, 31)
 RFcrossValidationScores = []
 print(f"\n\n> Random Forest Classifier training: evaluate Random Forest classifiers with n_estimators ranging from 1 to {max(estimators)} using 5-Fold Cross Validation and F1-score (macro) as metrics")
 for n_estimators in estimators:
     RF = RandomForestClassifier(n_estimators=n_estimators, random_state=randomState)
     scores = cross_val_score(RF, X_train, y_train, cv=5, scoring='f1_macro')
     RFcrossValidationScores.append(scores.mean())
+    print(f"> n_estimators = {n_estimators}, F1-score (mean of batch) = {scores.mean():.4f}")
 
 bestEstimator = estimators[np.argmax(RFcrossValidationScores)]
 
@@ -231,19 +221,11 @@ RF = RandomForestClassifier(n_estimators=bestEstimator, random_state=randomState
 RF.fit(X_train, y_train)
 predVal = RF.predict(X_val)
 
-accuracy = sklearn.metrics.accuracy_score(y_val, predVal)
-recall = sklearn.metrics.recall_score(y_val, predVal, average="macro")
-precision = sklearn.metrics.precision_score(y_val, predVal, average="macro")
-f1 = sklearn.metrics.f1_score(y_val, predVal, average="macro")
-
-mse = mean_squared_error(y_val, predVal)
-mae = mean_absolute_error(y_val, predVal)
-r2 = r2_score(y_val, predVal)
+accuracy = accuracy_score(y_val, predVal)
+recall = recall_score(y_val, predVal, average="macro")
+precision = precision_score(y_val, predVal, average="macro")
+f1 = f1_score(y_val, predVal, average="macro")
 
 plotQualityCheckGraph(RFcrossValidationScores, bestEstimator, max(RFcrossValidationScores))
-print(f"\n--- Classification Metrics ---")
 print(f"Accuracy: {accuracy:.4f}\nPrecision: {precision:.4f},\nRecall: {recall:.4f}\nF1 Score:  {f1:.4f}")
 
-print(f"\n--- Regression Metrics ---")
-print(f"MSE: {mse:.4f}\nMAE: {mae:.4f}\nR2 Score:  {r2:.4f}")
-print(f"\n> RFC evaluation completed")
