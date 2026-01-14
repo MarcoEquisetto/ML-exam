@@ -68,7 +68,7 @@ print(f"Shape: {dataset.shape}")
 
 ## Data Cleansing
 # Drop ID columns that aren't useful for classification and move class column to the end (just for convenience)
-columnsToDrop = ['obj_ID', 'run_ID', 'rerun_ID', 'cam_col', 'field_ID', 'spec_obj_ID']
+columnsToDrop = ['obj_ID', 'run_ID', 'rerun_ID', 'cam_col', 'field_ID', 'spec_obj_ID', 'MJD', 'plate', 'fiber_ID']
 toMove = ['class']
 dataset = dataset.drop(columns=columnsToDrop)
 print(f"\n> Dropping ID columns from dataset...\n> New Shape: {dataset.shape}")
@@ -95,8 +95,7 @@ print(f"> Outliers removed. New Shape: {dataset.shape}")
 
 # Check class distribution
 print(f"\n\n> Class distribution (percentage):\n{dataset['class'].value_counts(normalize=True).mul(100).round(2)}")
-datasetToPlot = dataset.drop(columns=['MJD', 'plate', 'fiber_ID'])
-datasetMerge = datasetToPlot.melt(id_vars=['class'], var_name='variable', value_name='value')
+datasetMerge = dataset.melt(id_vars=['class'], var_name='variable', value_name='value')
 sns.displot(
     data=datasetMerge,
     x='value', 
@@ -183,26 +182,6 @@ X_partial_train, X_val, y_partial_train, y_val = train_test_split(X_train, y_tra
 
 
 
-# TEST
-LSVC = LinearSVC(dual=False)
-CrossValScore = cross_val_score(LSVC, X_train, y_train, cv=20)
-print(
-    f"The average estimate of the model's accuracy is {CrossValScore.mean():.5f}, "
-    f"with the standard deviation of {CrossValScore.std():.5f}"    
-)
-LSVC.fit(X_train, y_train)
-predTest = LSVC.predict(X_test)
-
-conf_matrix = pd.DataFrame(data = confusion_matrix(y_test, predTest),
-                           columns = ['Predicted GALAXY', 'Predicted STAR', 'Predicted QSO'],
-                           index = ['Actual GALAXY', 'Actual STAR', 'Actual QSO'])
-
-ConfusionMatrixDisplay(confusion_matrix=conf_matrix, display_labels=['GALAXY', 'STAR', 'QSO']).plot(cmap='Blues', values_format='d')
-
-
-
-
-
 # KNN training
 Ks = range(1, maxK)
 KNNcrossValidationScores = []
@@ -228,7 +207,7 @@ precision = precision_score(y_val, predVal, average="macro")
 f1 = f1_score(y_val, predVal, average="macro")
 
 plotQualityCheckGraph(KNNcrossValidationScores, bestK, max(KNNcrossValidationScores))
-print(f"Accuracy: {accuracy:.4f}\nPrecision: {precision:.4f},\nRecall: {recall:.4f}\nF1 Score:  {f1:.4f}")
+print(f"Accuracy: {accuracy:.4f}\nPrecision: {precision:.4f}\nRecall: {recall:.4f}\nF1 Score:  {f1:.4f}")
 
 
 
@@ -282,7 +261,42 @@ recall = recall_score(y_val, predVal, average="macro")
 precision = precision_score(y_val, predVal, average="macro")
 f1 = f1_score(y_val, predVal, average="macro")
 
-print(f"Accuracy: {accuracy:.4f}\nPrecision: {precision:.4f},\nRecall: {recall:.4f}\nF1 Score:  {f1:.4f}")
+print(f"Accuracy: {accuracy:.4f}\nPrecision: {precision:.4f}\nRecall: {recall:.4f}\nF1 Score:  {f1:.4f}")
+
+
+
+############################# TEST #######################################################
+LSVC = LinearSVC(dual=False, random_state=randomState)
+
+# Cross Validation
+print("Training LinearSVC...")
+CrossValScore = cross_val_score(LSVC, X_train, y_train, cv=20) 
+print(
+    f"The average estimate of the model's accuracy is {CrossValScore.mean():.5f}, "
+    f"with the standard deviation of {CrossValScore.std():.5f}"    
+)
+
+# Fit and Predict
+LSVC.fit(X_train, y_train)
+predTest = LSVC.predict(X_test)
+
+
+cm = confusion_matrix(y_test, predTest)
+disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=['GALAXY', 'STAR', 'QSO'])
+
+# Plotting
+fig, ax = plt.subplots(figsize=(8, 6))
+disp.plot(ax=ax, cmap='Blues', values_format='d')
+ax.set_title('Confusion Matrix (Linear SVC)')
+plt.show()
+
+accuracy = accuracy_score(y_test, predTest)
+print(f"Accuracy: {accuracy:.4f}")
+#######################################################################################
+
+
+
 
 
 ## Clustering 
+print(f"\n\n> Clustering\n> Models to be implemented:\n1. KMeans\n2. GMM")
