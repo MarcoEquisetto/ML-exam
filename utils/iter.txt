@@ -6,3 +6,9 @@ Was originally using accuracy as metric, changed to cross validation and F1 scor
 decreased amount of K and estimators tested to 1 - 30 (included)
 
 removed 'sigmoid' and 'precomputed' kernel mode from SVM due to poor performance
+
+
+Tried to test LinearSVC specifically after seeing 'linearì kernel was performing well (speed and accuracy wise)
+
+
+Chose to test clustering algorithms due to the distribution of data. Will test K-means and GMM (Gaussian Mixture Model)
