@@ -5,3 +5,4 @@ Was originally using accuracy as metric, changed to cross validation and F1 scor
 
 decreased amount of K and estimators tested to 1 - 30 (included)
 
+removed 'sigmoid' and 'precomputed' kernel mode from SVM due to poor performance

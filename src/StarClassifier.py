@@ -2,18 +2,22 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from sklearn.base import accuracy_score, precision_score, recall_score
 from sklearn.discriminant_analysis import StandardScaler
 from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.preprocessing import LabelEncoder
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn import svm
-from sklearn.metrics import f1_score
+from sklearn.metrics import f1_score, accuracy_score, precision_score, recall_score
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 
 
 randomState = 42
+
+# TODO: remove these declarations
+maxK = 12
+maxEstimators = 10
+maxC = 6
 
 def drawCorrelationMatrix(dataset):
     plt.figure(figsize=(12, 10))
@@ -177,7 +181,7 @@ print(f"\n\n> Model Training and Evaluation\n> Models to be implemented:\n1. KNe
 X_partial_train, X_val, y_partial_train, y_val = train_test_split(X_train, y_train, test_size=0.2, random_state=randomState)
 
 # KNN training
-Ks = range(1, 31)
+Ks = range(1, maxK)
 KNNcrossValidationScores = []
 print(f"\n\n> KNN training: evaluate KNearestNeighbors classifiers with K ranging from 1 to {max(Ks)} using 5-Fold Cross Validation and F1-score (macro) as metrics")
 for n_neighbors in Ks:
@@ -190,7 +194,7 @@ for n_neighbors in Ks:
 bestK = Ks[np.argmax(KNNcrossValidationScores)]
 
 # Retrain with that K to show graphs related to this iteration
-print(f"> Best k value for KNN found to be {bestK} with F1-score = {max(KNNcrossValidationScores):.4f}: Retraining KNN with best k to show related graphs")
+print(f"\n> Best k value for KNN found to be {bestK} with F1-score = {max(KNNcrossValidationScores):.4f}: Retraining KNN with best k to show related graphs")
 KNN = KNeighborsClassifier(bestK)
 KNN.fit(X_train, y_train)
 predVal = KNN.predict(X_val)
@@ -206,7 +210,7 @@ print(f"Accuracy: {accuracy:.4f}\nPrecision: {precision:.4f},\nRecall: {recall:.
 
 
 # Random Forest Classifier training
-estimators = range(1, 31)
+estimators = range(1, maxEstimators)
 RFcrossValidationScores = []
 print(f"\n\n> Random Forest Classifier training: evaluate Random Forest classifiers with n_estimators ranging from 1 to {max(estimators)} using 5-Fold Cross Validation and F1-score (macro) as metrics")
 for n_estimators in estimators:
@@ -217,7 +221,7 @@ for n_estimators in estimators:
 
 bestEstimator = estimators[np.argmax(RFcrossValidationScores)]
 
-print(f"> Best validation F1-score: {max(RFcrossValidationScores):.4f} achieved at n_estimators = {bestEstimator}... Retrain Random Forest with best n_estimators to show related graphs")
+print(f"\n> Best validation F1-score: {max(RFcrossValidationScores):.4f} achieved at n_estimators = {bestEstimator}... Retrain Random Forest with best n_estimators to show related graphs")
 RF = RandomForestClassifier(n_estimators=bestEstimator, random_state=randomState)
 RF.fit(X_train, y_train)
 predVal = RF.predict(X_val)
@@ -230,3 +234,39 @@ f1 = f1_score(y_val, predVal, average="macro")
 plotQualityCheckGraph(RFcrossValidationScores, bestEstimator, max(RFcrossValidationScores))
 print(f"Accuracy: {accuracy:.4f}\nPrecision: {precision:.4f},\nRecall: {recall:.4f}\nF1 Score:  {f1:.4f}")
 
+
+
+# SVM training
+print(f"\n\n> SVM training: evaluate SVM classifier using 5-Fold Cross Validation and F1-score (macro) as metrics")
+kernels = ['linear', 'poly', 'rbf']
+SVMcrossValidationScores = []
+for kernel in kernels:
+    for c in range(1, maxC):
+        SVM = svm.SVC(kernel=kernel, C=c, random_state=randomState)
+        scores = cross_val_score(SVM, X_train, y_train, cv=5, scoring='f1_macro')
+        print(f"> kernel = {kernel} and C = {c}, F1-score (mean of batch) = {scores.mean():.4f}")
+        SVMcrossValidationScores.append((kernel, c, scores.mean()))
+
+bestKernel, bestC, bestScore = max(SVMcrossValidationScores, key=lambda item: item[2])
+print(f"> Best validation F1-score: {bestScore:.4f} achieved at kernel = {bestKernel} and C = {bestC}... Retrain SVM with best hyperparameters to show related graphs")
+
+SVM = svm.SVC(kernel=bestKernel, C=bestC, random_state=randomState)
+SVM.fit(X_train, y_train)
+predVal = SVM.predict(X_val)
+
+accuracy = accuracy_score(y_val, predVal)
+recall = recall_score(y_val, predVal, average="macro")
+precision = precision_score(y_val, predVal, average="macro")
+f1 = f1_score(y_val, predVal, average="macro")
+
+plotQualityCheckGraph(
+    [score for _, _, score in SVMcrossValidationScores if _ == bestKernel and _ == bestC], 
+    bestC, 
+    bestScore
+)
+
+print(f"Accuracy: {accuracy:.4f}\nPrecision: {precision:.4f},\nRecall: {recall:.4f}\nF1 Score:  {f1:.4f}")
+
+
+
+## Clustering 
