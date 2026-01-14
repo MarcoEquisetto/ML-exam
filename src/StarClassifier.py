@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+from sklearn.calibration import LinearSVC
 from sklearn.discriminant_analysis import StandardScaler
 from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.preprocessing import LabelEncoder
@@ -180,6 +181,28 @@ X_test = pd.DataFrame(X_test_scaled, columns=X_test.columns)
 print(f"\n\n> Model Training and Evaluation\n> Models to be implemented:\n1. KNeighborsClassifier\n2. RandomForestClassifier\n3. Support Vector Machine (SVM)")
 X_partial_train, X_val, y_partial_train, y_val = train_test_split(X_train, y_train, test_size=0.2, random_state=randomState)
 
+
+
+# TEST
+LSVC = LinearSVC(dual=False)
+CrossValScore = cross_val_score(LSVC, X_train, y_train, cv=20)
+print(
+    f"The average estimate of the model's accuracy is {CrossValScore.mean():.5f}, "
+    f"with the standard deviation of {CrossValScore.std():.5f}"    
+)
+LSVC.fit(X_train, y_train)
+predTest = LSVC.predict(X_test)
+
+conf_matrix = pd.DataFrame(data = confusion_matrix(y_test, predTest),
+                           columns = ['Predicted GALAXY', 'Predicted STAR', 'Predicted QSO'],
+                           index = ['Actual GALAXY', 'Actual STAR', 'Actual QSO'])
+
+ConfusionMatrixDisplay(confusion_matrix=conf_matrix, display_labels=['GALAXY', 'STAR', 'QSO']).plot(cmap='Blues', values_format='d')
+
+
+
+
+
 # KNN training
 Ks = range(1, maxK)
 KNNcrossValidationScores = []
@@ -259,14 +282,7 @@ recall = recall_score(y_val, predVal, average="macro")
 precision = precision_score(y_val, predVal, average="macro")
 f1 = f1_score(y_val, predVal, average="macro")
 
-plotQualityCheckGraph(
-    [score for _, _, score in SVMcrossValidationScores if _ == bestKernel and _ == bestC], 
-    bestC, 
-    bestScore
-)
-
 print(f"Accuracy: {accuracy:.4f}\nPrecision: {precision:.4f},\nRecall: {recall:.4f}\nF1 Score:  {f1:.4f}")
-
 
 
 ## Clustering 
