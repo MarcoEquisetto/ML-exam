@@ -11,7 +11,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn import svm
 from sklearn.metrics import f1_score, accuracy_score, precision_score, recall_score
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
-
+from sklearn.cluster import KMeans
 
 randomState = 42
 
@@ -19,6 +19,7 @@ randomState = 42
 maxK = 12
 maxEstimators = 10
 maxC = 6
+maxClusters = 10
 
 def drawCorrelationMatrix(dataset):
     plt.figure(figsize=(12, 10))
@@ -42,7 +43,7 @@ def plotQualityCheckGraph(scores, bestHyperparameter, bestAccuracy):
     ax1.text(
         0.02, 
         0.98, 
-        f'Best HyperParameter: {bestAccuracy:.4f}', 
+        f'F1-Score: {bestAccuracy:.4f}', 
         transform=ax1.transAxes, 
         fontsize=12, 
         verticalalignment='top', 
@@ -300,3 +301,29 @@ print(f"Accuracy: {accuracy:.4f}")
 
 ## Clustering 
 print(f"\n\n> Clustering\n> Models to be implemented:\n1. KMeans\n2. GMM")
+print(f"\n\n> K-Means Training: ")
+
+# Initialize lists to store labels and centers for each run
+all_labels = []
+all_centers = []
+
+# Perform K-means clustering 4 times with random initializations
+for i in range(4):
+    for clusters in range(1, maxClusters):
+        KM = KMeans(n_clusters=clusters, random_state=i)  # Using different random_state values allows obtaining different cluster centers at the beginning
+        KM.fit(X)
+        labels = KM.labels_
+        centers = KM.cluster_centers_
+
+        all_labels.append(labels)
+        all_centers.append(centers)
+
+# Visualize the data and clusters for each run
+for i in range(4):
+    plt.figure()
+    plt.scatter(X[:, 0], X[:, 1], c=all_labels[i], cmap='viridis')
+    plt.scatter(all_centers[i][:, 0], all_centers[i][:, 1], c='red', marker='x', label='Cluster Centers')
+    plt.title(f'K-means Clustering - Run {i+1}')
+    plt.legend()
+
+plt.show()

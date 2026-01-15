@@ -12,3 +12,14 @@ Tried to test LinearSVC specifically after seeing 'linearì kernel was performin
 
 
 Chose to test clustering algorithms due to the distribution of data. Will test K-means and GMM (Gaussian Mixture Model)
+
+Check for overfitting or underfitting!
+
+Am i working on test data and not on validation data? Specify it in the report if i split test into test and validation!
+
+
+GMM is good to detect outliers, if a point has a very low percentage to belong to any cluster it means it is an outlier.
+
+
+analisi con PCA per vedeere i componenti quanta variance aggiungono, poi valuto clustering su raw data e su PCA data.
+Prendere feature poco leggibili e fare quello con pCA e poi con altri dati categorici
