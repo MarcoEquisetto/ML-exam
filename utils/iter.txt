@@ -33,3 +33,5 @@ Compared training with
     1. redshift + no synthetic features
     2. no redshift + synthetic features
 and performance is better in case 2
+
+Clustering is not influenced by the difference in case 1 or 2 since PCA selects the same features as best in either case
