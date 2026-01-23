@@ -28,3 +28,8 @@ Prendere feature poco leggibili e fare quello con pCA e poi con altri dati categ
 Drop redshift because its too good of a feature to classify and makes the models job too easy
 due to this i have to do some feature engineering to go about correlated features but still keep crucial color information for my model's evaluation
 -> Created synthetic featues to describe colors without the need to keep u g z 
+
+Compared training with
+    1. redshift + no synthetic features
+    2. no redshift + synthetic features
+and performance is better in case 2

@@ -119,22 +119,21 @@ for i in range(len(CM.data.columns)):
             print(f"> {pair[0]} and {pair[1]} with correlation index {pair[2]:.2f}")
 
 print(f"\n> Drop highly correlated features, create synthetic ones and recompute correlation matrix")
+for pair in pairs:
+    # Keep the first out of the pair of features
+    toDrop = pair[1]
+    if toDrop in dataset.columns:
+        dataset = dataset.drop(columns=[toDrop])
+        print(f"> Dropped feature: {toDrop}")
 
-
-# Subtracting magnitudes gives the color
-dataset['u_g'] = dataset['u'] - dataset['g']
-dataset['g_r'] = dataset['g'] - dataset['r']
-dataset['r_i'] = dataset['r'] - dataset['i']
-dataset['i_z'] = dataset['i'] - dataset['z']
-datasetWithoutRedshift = dataset.drop(columns=['u', 'g', 'i', 'z', 'redshift'])
-print(f"\n\n> Optimized correlation matrix:\n{drawCorrelationMatrix(datasetWithoutRedshift).data}")
+print(f"\n\n> Optimized correlation matrix:\n{drawCorrelationMatrix(dataset).data}")
 
 
 # Split the dataset into features and target variable
 print(f"\n\n> Split dataset into features and target variable")
 targetName = "class"
-X = datasetWithoutRedshift.drop(columns=[targetName])
-y = datasetWithoutRedshift[targetName]
+X = dataset.drop(columns=[targetName])
+y = dataset[targetName]
 print(f"Features used for classification: {X.columns.to_list()}")
 print(f"Shape of features: {X.shape}")
 
