@@ -23,3 +23,8 @@ GMM is good to detect outliers, if a point has a very low percentage to belong t
 
 analisi con PCA per vedeere i componenti quanta variance aggiungono, poi valuto clustering su raw data e su PCA data.
 Prendere feature poco leggibili e fare quello con pCA e poi con altri dati categorici
+
+
+Drop redshift because its too good of a feature to classify and makes the models job too easy
+due to this i have to do some feature engineering to go about correlated features but still keep crucial color information for my model's evaluation
+-> Created synthetic featues to describe colors without the need to keep u g z 

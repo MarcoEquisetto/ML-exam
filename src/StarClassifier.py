@@ -18,8 +18,8 @@ from sklearn.mixture import GaussianMixture
 randomState = 42
 
 # TODO: remove these declarations
-maxK = 12
-maxEstimators = 10
+maxK = 7
+maxEstimators = 5
 maxC = 6
 maxClusters = 10
 
@@ -31,34 +31,16 @@ def drawCorrelationMatrix(dataset):
     plt.show()
     return CM
 
-def plotQualityCheckGraph(scores, bestHyperparameter, bestAccuracy):
-    fig = plt.figure(figsize=(16, 6))
-    ax1 = fig.add_subplot(1, 2, 1)  # 1 row, 2 columns, plot 1
-    ax1.plot(range(1, len(scores)+1), scores, marker='o', markersize=4, color='steelblue')
-    ax1.set_title(f'F1-Score (macro) vs. HyperParameter (Best HP = {bestHyperparameter})', fontsize=14)
-    ax1.set_xlabel('HyperParameter Value')
-    ax1.set_ylabel('F1-Score (macro)')
-    ax1.grid(True, alpha=0.3)
-    ax1.axvline(bestHyperparameter, color='red', linestyle='--', linewidth=2, label=f'Best Hyperparameter = {bestHyperparameter}')
-    ax1.scatter(bestHyperparameter, scores[bestHyperparameter-1], color='red', s=100, zorder=5)
-    ax1.legend()
-    ax1.text(
-        0.02, 
-        0.98, 
-        f'F1-Score: {bestAccuracy:.4f}', 
-        transform=ax1.transAxes, 
-        fontsize=12, 
-        verticalalignment='top', 
-        bbox=dict(boxstyle="round", facecolor="wheat")
-    )
-
-    # Subplot 2: Confusion Matrix of best KNN
-    cm = confusion_matrix(y_val, predVal)
-    ax2 = fig.add_subplot(1, 2, 2)
-    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=['GALAXY', 'STAR', 'QSO'])
-    disp.plot(ax=ax2, cmap='Blues', values_format='d')
-    ax2.set_title('Confusion Matrix (Validation Set)')
-    plt.tight_layout()
+def plotQualityCheckGraph(scores, bestHyperparameter, bestScore, model_name):
+    fig = plt.figure(figsize=(10, 5))
+    plt.plot(range(1, len(scores)+1), scores, marker='o', markersize=4, color='steelblue')
+    plt.title(f'{model_name}: F1-Score vs. HyperParameter (Best = {bestHyperparameter})', fontsize=14)
+    plt.xlabel('HyperParameter Value')
+    plt.ylabel('F1-Score (macro)')
+    plt.grid(True, alpha=0.3)
+    plt.axvline(bestHyperparameter, color='red', linestyle='--', linewidth=2, label=f'Best HP = {bestHyperparameter}')
+    plt.scatter(bestHyperparameter, bestScore, color='red', s=100, zorder=5)
+    plt.legend()
     plt.show()
 
 
@@ -136,14 +118,14 @@ for i in range(len(CM.data.columns)):
             pairs.append(pair)
             print(f"> {pair[0]} and {pair[1]} with correlation index {pair[2]:.2f}")
 
-print(f"\n> Drop highly correlated features and recompute correlation matrix")
-for pair in pairs:
-    # Keep the first out of the pair of features
-    toDrop = pair[1]
-    if toDrop in dataset.columns:
-        dataset = dataset.drop(columns=[toDrop])
-        print(f"> Dropped feature: {toDrop}")
+print(f"\n> Drop highly correlated features, create synthetic ones and recompute correlation matrix")
 
+# Subtracting magnitudes gives the color
+dataset['u_g'] = dataset['u'] - dataset['g']
+dataset['g_r'] = dataset['g'] - dataset['r']
+dataset['r_i'] = dataset['r'] - dataset['i']
+dataset['i_z'] = dataset['i'] - dataset['z']
+dataset = dataset.drop(columns=['u', 'g', 'i', 'z', 'redshift'])
 print(f"\n\n> Optimized correlation matrix:\n{drawCorrelationMatrix(dataset).data}")
 
 
@@ -154,7 +136,6 @@ X = dataset.drop(columns=[targetName])
 y = dataset[targetName]
 print(f"Features used for classification: {X.columns.to_list()}")
 print(f"Shape of features: {X.shape}")
-
 
 
 ## Split the dataset into training and testing sets (80% train, 20% test)
@@ -169,6 +150,7 @@ X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
 X_train = pd.DataFrame(X_train_scaled, columns=X_train.columns)
 X_test = pd.DataFrame(X_test_scaled, columns=X_test.columns)
+
 
 
 ## Model Training and Evaluation
@@ -196,7 +178,7 @@ bestKNN = KNeighborsClassifier(bestK)
 bestKNN.fit(X_train, y_train)
 predVal = bestKNN.predict(X_test)
 
-plotQualityCheckGraph(KNNcrossValidationScores, bestK, max(KNNcrossValidationScores))
+plotQualityCheckGraph(KNNcrossValidationScores, bestK, max(KNNcrossValidationScores), "KNN")
 print(f"Accuracy: {accuracy_score(y_test, predVal):.4f}")
 
 
@@ -218,96 +200,41 @@ RF = RandomForestClassifier(n_estimators=bestEstimator, random_state=randomState
 RF.fit(X_train, y_train)
 predVal = RF.predict(X_test)
 
-plotQualityCheckGraph(RFcrossValidationScores, bestEstimator, max(RFcrossValidationScores))
+plotQualityCheckGraph(RFcrossValidationScores, bestEstimator, max(RFcrossValidationScores), "RFC")
 print(f"Accuracy: {accuracy_score(y_test, predVal):.4f}")
 
 
 
-# SVM training
-print(f"\n\n> SVM training: evaluate SVM classifier using 5-Fold Cross Validation and F1-score (macro) as metrics")
-kernels = ['linear', 'poly', 'rbf']
-SVMcrossValidationScores = []
-for kernel in kernels:
-    for c in range(1, maxC):
-        SVM = svm.SVC(kernel=kernel, C=c, random_state=randomState)
-        scores = cross_val_score(SVM, X_train, y_train, cv=5, scoring='f1_macro')
-        print(f"> kernel = {kernel} and C = {c}, F1-score (mean of batch) = {scores.mean():.4f}")
-        SVMcrossValidationScores.append((kernel, c, scores.mean()))
-
-bestKernel, bestC, bestScore = max(SVMcrossValidationScores, key=lambda item: item[2])
-print(f"> Best validation F1-score: {bestScore:.4f} achieved at kernel = {bestKernel} and C = {bestC}... Retrain SVM with best hyperparameters to show related graphs")
-
-SVM = svm.SVC(kernel=bestKernel, C=bestC, random_state=randomState)
-SVM.fit(X_train, y_train)
-predVal = SVM.predict(X_val)
-
-accuracy = accuracy_score(y_val, predVal)
-recall = recall_score(y_val, predVal, average="macro")
-precision = precision_score(y_val, predVal, average="macro")
-f1 = f1_score(y_val, predVal, average="macro")
-
-print(f"Accuracy: {accuracy:.4f}\nPrecision: {precision:.4f}\nRecall: {recall:.4f}\nF1 Score:  {f1:.4f}")
+## Clustering
+print(f"\n\n> Clustering\n> Models to be implemented:\n1. KMeans\n2. GMM with PCA")
+# KMeans Clustering
+print(f"\n\n> KMeans Clustering")
+KMeansModel = KMeans(n_clusters=3, random_state=randomState)
+KMeanslabels = KMeansModel.fit_predict(X)
+plt.figure(figsize=(10, 6))
+sns.scatterplot(x=X.iloc[:, 0], y=X.iloc[:, 1], hue=KMeanslabels, palette='viridis', alpha=0.6)
+plt.title('KMeans Clustering on Original Data')
 
 
-
-############################# TEST #######################################################
-LSVC = LinearSVC(dual=False, random_state=randomState)
-
-# Cross Validation
-print("Training LinearSVC...")
-CrossValScore = cross_val_score(LSVC, X_train, y_train, cv=20) 
-print(
-    f"The average estimate of the model's accuracy is {CrossValScore.mean():.5f}, "
-    f"with the standard deviation of {CrossValScore.std():.5f}"    
+## GMM optimized with PCA for dimensionality reduction
+print(f"\n\n> GMM optimized with PCA for dimensionality reduction")
+PCA = PCA(n_components=2, random_state=randomState)
+X_reduced = PCA.fit_transform(X)
+print(f"> Explained variance ratio by the 2 principal components: {PCA.explained_variance_ratio_}")
+loadings = pd.DataFrame(
+    PCA.components_.T, 
+    columns=['PC1', 'PC2'], 
+    index=X.columns
 )
+print("\n> Feature importance (PCA Loadings):\n", loadings)
 
-# Fit and Predict
-LSVC.fit(X_train, y_train)
-predTest = LSVC.predict(X_test)
+GMM_PCA = GaussianMixture(n_components=3, random_state=randomState)
+GMMlabels = GMM_PCA.fit_predict(X_reduced)
 
-
-cm = confusion_matrix(y_test, predTest)
-disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=['GALAXY', 'STAR', 'QSO'])
-
-# Plotting
-fig, ax = plt.subplots(figsize=(8, 6))
-disp.plot(ax=ax, cmap='Blues', values_format='d')
-ax.set_title('Confusion Matrix (Linear SVC)')
+plt.figure(figsize=(10, 6))
+sns.scatterplot(x=X_reduced[:, 0], y=X_reduced[:, 1], hue=GMMlabels, palette='viridis', alpha=0.6)
+plt.title('GMM Clustering on PCA reduced Data')
+plt.xlabel('Component1')
+plt.ylabel('Component2')
 plt.show()
 
-accuracy = accuracy_score(y_test, predTest)
-print(f"Accuracy: {accuracy:.4f}")
-#######################################################################################
-
-
-
-
-
-## Clustering 
-print(f"\n\n> Clustering\n> Models to be implemented:\n1. KMeans\n2. GMM")
-print(f"\n\n> K-Means Training: ")
-
-# Initialize lists to store labels and centers for each run
-all_labels = []
-all_centers = []
-
-# Perform K-means clustering 4 times with random initializations
-for i in range(4):
-    for clusters in range(1, maxClusters):
-        KM = KMeans(n_clusters=clusters, random_state=i)  # Using different random_state values allows obtaining different cluster centers at the beginning
-        KM.fit(X)
-        labels = KM.labels_
-        centers = KM.cluster_centers_
-
-        all_labels.append(labels)
-        all_centers.append(centers)
-
-# Visualize the data and clusters for each run
-for i in range(4):
-    plt.figure()
-    plt.scatter(X[:, 0], X[:, 1], c=all_labels[i], cmap='viridis')
-    plt.scatter(all_centers[i][:, 0], all_centers[i][:, 1], c='red', marker='x', label='Cluster Centers')
-    plt.title(f'K-means Clustering - Run {i+1}')
-    plt.legend()
-
-plt.show()
