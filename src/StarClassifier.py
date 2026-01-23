@@ -12,6 +12,8 @@ from sklearn import svm
 from sklearn.metrics import f1_score, accuracy_score, precision_score, recall_score
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from sklearn.cluster import KMeans
+from sklearn.decomposition import PCA
+from sklearn.mixture import GaussianMixture
 
 randomState = 42
 
@@ -157,24 +159,16 @@ print(f"Shape of features: {X.shape}")
 
 ## Split the dataset into training and testing sets (80% train, 20% test)
 print(f"\n\n> Split the dataset into Training and Testing sets (80%, 20%)")
-X_rawTrain, X_rawTest, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=randomState)
-
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=randomState)
 
 
 ## Preprocessing 
 print(f"\n\n> Preprocessing\n> Given the logarithmic nature of the redshift feature, apply log1p transformation and scaling to it")
-X_train = X_rawTrain.copy()
-X_test = X_rawTest.copy()
-X_test.redshift = np.log1p(X_test.redshift)
-X_train.redshift = np.log1p(X_train.redshift)
-
 scaler = StandardScaler()
-scaler.fit(X_train)
-X_train_scaled = scaler.transform(X_train)
+X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
 X_train = pd.DataFrame(X_train_scaled, columns=X_train.columns)
 X_test = pd.DataFrame(X_test_scaled, columns=X_test.columns)
-
 
 
 ## Model Training and Evaluation
@@ -198,17 +192,12 @@ bestK = Ks[np.argmax(KNNcrossValidationScores)]
 
 # Retrain with that K to show graphs related to this iteration
 print(f"\n> Best k value for KNN found to be {bestK} with F1-score = {max(KNNcrossValidationScores):.4f}: Retraining KNN with best k to show related graphs")
-KNN = KNeighborsClassifier(bestK)
-KNN.fit(X_train, y_train)
-predVal = KNN.predict(X_val)
-
-accuracy = accuracy_score(y_val, predVal)
-recall = recall_score(y_val, predVal, average="macro")
-precision = precision_score(y_val, predVal, average="macro")
-f1 = f1_score(y_val, predVal, average="macro")
+bestKNN = KNeighborsClassifier(bestK)
+bestKNN.fit(X_train, y_train)
+predVal = bestKNN.predict(X_test)
 
 plotQualityCheckGraph(KNNcrossValidationScores, bestK, max(KNNcrossValidationScores))
-print(f"Accuracy: {accuracy:.4f}\nPrecision: {precision:.4f}\nRecall: {recall:.4f}\nF1 Score:  {f1:.4f}")
+print(f"Accuracy: {accuracy_score(y_test, predVal):.4f}")
 
 
 
@@ -227,15 +216,10 @@ bestEstimator = estimators[np.argmax(RFcrossValidationScores)]
 print(f"\n> Best validation F1-score: {max(RFcrossValidationScores):.4f} achieved at n_estimators = {bestEstimator}... Retrain Random Forest with best n_estimators to show related graphs")
 RF = RandomForestClassifier(n_estimators=bestEstimator, random_state=randomState)
 RF.fit(X_train, y_train)
-predVal = RF.predict(X_val)
-
-accuracy = accuracy_score(y_val, predVal)
-recall = recall_score(y_val, predVal, average="macro")
-precision = precision_score(y_val, predVal, average="macro")
-f1 = f1_score(y_val, predVal, average="macro")
+predVal = RF.predict(X_test)
 
 plotQualityCheckGraph(RFcrossValidationScores, bestEstimator, max(RFcrossValidationScores))
-print(f"Accuracy: {accuracy:.4f}\nPrecision: {precision:.4f},\nRecall: {recall:.4f}\nF1 Score:  {f1:.4f}")
+print(f"Accuracy: {accuracy_score(y_test, predVal):.4f}")
 
 
 
