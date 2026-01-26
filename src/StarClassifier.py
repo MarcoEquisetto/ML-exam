@@ -155,9 +155,6 @@ print(f"\n\n> Preprocessing (scaling)\n")
 
 ## Model Training and Evaluation
 print(f"\n\n> Model Training and Evaluation\n> Models to be implemented:\n1. KNeighborsClassifier\n2. RandomForestClassifier\n3. Support Vector Machine (SVM)")
-X_partial_train, X_val, y_partial_train, y_val = train_test_split(X_train, y_train, test_size=0.2, random_state=randomState)
-
-
 
 # KNN training
 Ks = range(1, maxK)
