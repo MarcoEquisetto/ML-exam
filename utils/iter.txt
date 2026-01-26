@@ -35,3 +35,9 @@ Compared training with
 and performance is better in case 2
 
 Clustering is not influenced by the difference in case 1 or 2 since PCA selects the same features as best in either case
+
+
+Added pipeline in training loops to fix mistake of data leakage (scaled the entire training set (X_train) before the cross-validation loop)
+- Why it's bad: When cross_val_score splits X_train into internal folds, the validation fold has already influenced the scaler (mean/variance) 
+used on the training fold. This "peeking" can lead to overly optimistic scores.
+
