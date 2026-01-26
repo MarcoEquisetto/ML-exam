@@ -1,46 +1,33 @@
+# Import common libraries 
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from sklearn.svm import LinearSVC
+
+# Import models
 from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.preprocessing import LabelEncoder
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import f1_score, accuracy_score, precision_score, recall_score, confusion_matrix, ConfusionMatrixDisplay
-from sklearn.cluster import KMeans
+from sklearn.svm import LinearSVC
 from sklearn.decomposition import PCA
 from sklearn.mixture import GaussianMixture
+from sklearn.cluster import KMeans
+
+# Import evaluation tools
+from sklearn.model_selection import cross_val_score, train_test_split
+from sklearn.metrics import f1_score, accuracy_score, precision_score, recall_score, confusion_matrix, ConfusionMatrixDisplay
 from sklearn.pipeline import make_pipeline
+
+# Custom helper functions
+from helperFuncs import drawCorrelationMatrix, plotQualityCheckGraph, print_cluster_metrics
+
 
 randomState = 42
 
-# TODO: remove these declarations
-maxK = 7
-maxEstimators = 5
-maxClusters = 10
-
-def drawCorrelationMatrix(dataset):
-    plt.figure(figsize=(12, 10))
-    CM = dataset.corr(numeric_only=True).abs().style.background_gradient(axis=None, cmap='Reds')
-    sns.heatmap(CM.data, annot=True, fmt=".2f", cmap='Reds')
-    plt.title('Feature Correlation Matrix')
-    plt.show()
-    return CM
-
-def plotQualityCheckGraph(scores, bestHyperparameter, bestScore, model_name):
-    fig = plt.figure(figsize=(10, 5))
-    plt.plot(range(1, len(scores)+1), scores, marker='o', markersize=4, color='steelblue')
-    plt.title(f'{model_name}: F1-Score vs. HyperParameter (Best = {bestHyperparameter})', fontsize=14)
-    plt.xlabel('HyperParameter Value')
-    plt.ylabel('F1-Score (macro)')
-    plt.grid(True, alpha=0.3)
-    plt.axvline(bestHyperparameter, color='red', linestyle='--', linewidth=2, label=f'Best HP = {bestHyperparameter}')
-    plt.scatter(bestHyperparameter, bestScore, color='red', s=100, zorder=5)
-    plt.legend()
-    plt.show()
-
+# Hyperparameters max ranges
+maxK = 10
+maxEstimators = 10
 
 # Import the Star Classification Dataset and print its shape
 dataset = pd.read_csv('./dataset/star_classification.csv')
@@ -274,3 +261,12 @@ axes[1, 1].set_ylabel('PC2')
 
 plt.tight_layout()
 plt.show()
+
+print("\n\n> Clustering Quantitative Evaluation")
+# Evaluate KMeans
+print_cluster_metrics("KMeans (Raw Data)", y, raw_Kmeans, X_scaled)
+print_cluster_metrics("KMeans (PCA Data)", y, PCA_Kmeans, X_PCA)
+
+# Evaluate GMM
+print_cluster_metrics("GMM (Raw Data)", y, raw_GMM, X_scaled)
+print_cluster_metrics("GMM (PCA Data)", y, PCA_GMM, X_PCA)
