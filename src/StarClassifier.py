@@ -29,6 +29,10 @@ randomState = 42
 maxK = 10
 maxEstimators = 10
 
+# TODO: Delete this
+tempK = 15
+tempEstimators = 100
+
 # Import the Star Classification Dataset and print its shape
 dataset = pd.read_csv('./dataset/star_classification.csv')
 print("\n\n> Star Classification Dataset")
@@ -144,7 +148,7 @@ print(f"\n\n> Preprocessing (scaling)\n")
 print(f"\n\n> Model Training and Evaluation\n> Models to be implemented:\n1. KNeighborsClassifier\n2. RandomForestClassifier\n3. Support Vector Machine (SVM)")
 
 # KNN training
-Ks = range(1, maxK)
+Ks = range(1, maxK + 1)
 KNNcrossValidationScores = []
 print(f"\n\n> KNN training: evaluate KNearestNeighbors classifiers with K ranging from 1 to {max(Ks)} using 5-Fold Cross Validation and F1-score (macro) as metrics")
 for n_neighbors in Ks:
@@ -158,7 +162,7 @@ bestK = Ks[np.argmax(KNNcrossValidationScores)]
 
 # Retrain with that K to show graphs related to this iteration
 print(f"\n> Best k value for KNN found to be {bestK} with F1-score = {max(KNNcrossValidationScores):.4f}: Retraining KNN with best k to show related graphs")
-bestKNNPipeline = make_pipeline(StandardScaler(), KNeighborsClassifier(bestK))
+bestKNNPipeline = make_pipeline(StandardScaler(), KNeighborsClassifier(tempK))
 bestKNNPipeline.fit(X_train, y_train)
 predVal = bestKNNPipeline.predict(X_test)
 
@@ -168,7 +172,7 @@ print(f"Accuracy: {accuracy_score(y_test, predVal):.4f}")
 
 
 # Random Forest Classifier training
-estimators = range(1, maxEstimators)
+estimators = range(1, maxEstimators + 1)
 RFcrossValidationScores = []
 print(f"\n\n> Random Forest Classifier training: evaluate Random Forest classifiers with n_estimators ranging from 1 to {max(estimators)} using 5-Fold Cross Validation and F1-score (macro) as metrics")
 for n_estimators in estimators:
@@ -181,7 +185,7 @@ for n_estimators in estimators:
 bestEstimator = estimators[np.argmax(RFcrossValidationScores)]
 
 print(f"\n> Best validation F1-score: {max(RFcrossValidationScores):.4f} achieved at n_estimators = {bestEstimator}... Retrain Random Forest with best n_estimators to show related graphs")
-bestRFCPipeline = make_pipeline(StandardScaler(), RandomForestClassifier(n_estimators=bestEstimator, random_state=randomState))
+bestRFCPipeline = make_pipeline(StandardScaler(), RandomForestClassifier(n_estimators=tempEstimators, random_state=randomState))
 bestRFCPipeline.fit(X_train, y_train)
 predVal = bestRFCPipeline.predict(X_test)
 
