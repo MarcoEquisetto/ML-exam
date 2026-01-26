@@ -41,3 +41,8 @@ Added pipeline in training loops to fix mistake of data leakage (scaled the enti
 - Why it's bad: When cross_val_score splits X_train into internal folds, the validation fold has already influenced the scaler (mean/variance) 
 used on the training fold. This "peeking" can lead to overly optimistic scores.
 
+Clustering seems to perform poorly after evaluating metrics from both PCA-affected and raw data.
+It is to note that, even if of poor performance, PCA did impact precision meaningfully, almost doubling silhouette score and performance in general.
+Evidently, this dataset is not suitable for a clustering attemp.
+
+KNN and RFC seem to perform well, achieving around 90% accuracy given a Hyperparameter that performs well for each.
