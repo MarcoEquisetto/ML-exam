@@ -21,7 +21,7 @@ from sklearn.metrics import f1_score, accuracy_score, precision_score, recall_sc
 from sklearn.pipeline import make_pipeline
 
 # Custom helper functions
-from helperFuncs import drawCorrelationMatrix, plotQualityCheckGraph, print_cluster_metrics
+from helperFuncs import drawCorrelationMatrix, plotQualityCheckGraph, printClusterMetrics, plotLogQualityCheckGraph
 
 
 randomState = 42
@@ -139,11 +139,6 @@ print(f"\n\n> Split the dataset into Training and Testing sets (80%, 20%)")
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=randomState)
 
 
-## Preprocessing
-print(f"\n\n> Preprocessing (scaling)\n")
-
-
-
 
 ## Model Training and Evaluation
 print(f"\n\n> Model Training and Evaluation\n> Models to be implemented:\n1. KNeighborsClassifier\n2. RandomForestClassifier\n3. Support Vector Machine (SVM)")
@@ -167,9 +162,10 @@ bestKNNPipeline = make_pipeline(StandardScaler(), KNeighborsClassifier(tempK))
 bestKNNPipeline.fit(X_train, y_train)
 predVal = bestKNNPipeline.predict(X_test)
 
-plotQualityCheckGraph(KNNcrossValidationScores, bestK, max(KNNcrossValidationScores), "KNN")
+plotQualityCheckGraph(KNNcrossValidationScores, bestK, max(KNNcrossValidationScores), "KNearestNeighbors")
 print(f"Accuracy: {accuracy_score(y_test, predVal):.4f}")
-
+print(f"Precision: {precision_score(y_test, predVal, average='macro'):.4f}")
+print(f"Recall: {recall_score(y_test, predVal, average='macro'):.4f}")
 
 
 # Random Forest Classifier training
@@ -185,13 +181,15 @@ for n_estimators in estimators:
 # Extrapolate best n_estimators
 bestEstimator = estimators[np.argmax(RFcrossValidationScores)]
 
-print(f"\n> Best validation F1-score: {max(RFcrossValidationScores):.4f} achieved at n_estimators = {bestEstimator}... Retrain Random Forest with best n_estimators to show related graphs")
+print(f"\n> Best validation F1-score: {max(RFcrossValidationScores):.4f} achieved at n_estimators = {bestEstimator}... Retrain RFC with best n_estimators to show related graphs")
 bestRFCPipeline = make_pipeline(StandardScaler(), RandomForestClassifier(n_estimators=tempEstimators, random_state=randomState))
 bestRFCPipeline.fit(X_train, y_train)
 predVal = bestRFCPipeline.predict(X_test)
 
-plotQualityCheckGraph(RFcrossValidationScores, bestEstimator, max(RFcrossValidationScores), "RFC")
+plotQualityCheckGraph(RFcrossValidationScores, bestEstimator, max(RFcrossValidationScores), "RandomForestClassifier")
 print(f"Accuracy: {accuracy_score(y_test, predVal):.4f}")
+print(f"Precision: {precision_score(y_test, predVal, average='macro'):.4f}")
+print(f"Recall: {recall_score(y_test, predVal, average='macro'):.4f}")
 
 
 
@@ -217,10 +215,11 @@ print(f"\n> Best validation F1-score: {max(SVMcrossValidationScores):.4f} achiev
 bestSVCPipeline = make_pipeline(StandardScaler(), SVC(C=bestC, kernel='rbf', random_state=randomState))
 bestSVCPipeline.fit(X_train, y_train)
 predVal = bestSVCPipeline.predict(X_test)
-plotQualityCheckGraph(SVMcrossValidationScores, bestC, max(SVMcrossValidationScores), "SVM")
+plotLogQualityCheckGraph(SVMcrossValidationScores, Cs, bestC, max(SVMcrossValidationScores), "SVM(rbf)")
 
 print(f"Accuracy: {accuracy_score(y_test, predVal):.4f}")
-
+print(f"Precision: {precision_score(y_test, predVal, average='macro'):.4f}")
+print(f"Recall: {recall_score(y_test, predVal, average='macro'):.4f}")
 
 
 # Logistic Regression training
@@ -242,9 +241,11 @@ print(f"\n> Best validation F1-score: {max(LRcrossValidationScores):.4f} achieve
 bestLRPipeline = make_pipeline(StandardScaler(), LogisticRegression(C=bestLR_C, random_state=randomState))
 bestLRPipeline.fit(X_train, y_train)
 predVal = bestLRPipeline.predict(X_test)
-plotQualityCheckGraph(LRcrossValidationScores, bestLR_C, max(LRcrossValidationScores), "Logistic Regression")
+plotLogQualityCheckGraph(LRcrossValidationScores, LR_Cs, bestLR_C, max(LRcrossValidationScores), "Logistic Regression")
 
 print(f"Accuracy: {accuracy_score(y_test, predVal):.4f}")
+print(f"Precision: {precision_score(y_test, predVal, average='macro'):.4f}")
+print(f"Recall: {recall_score(y_test, predVal, average='macro'):.4f}")
 
 
 
@@ -272,7 +273,6 @@ GMPPCA = GaussianMixture(n_components=3, random_state=randomState)
 PCA_GMM = GMPPCA.fit_predict(X_PCA)
 
 
-
 fig, axes = plt.subplots(2, 2, figsize=(18, 12))
 # KMeans Plots
 sns.scatterplot(x=X_PCA[:, 0], y=X_PCA[:, 1], hue=raw_Kmeans, palette='viridis', alpha=0.6, ax=axes[0, 0])
@@ -298,10 +298,7 @@ plt.tight_layout()
 plt.show()
 
 print("\n\n> Clustering Quantitative Evaluation")
-# Evaluate KMeans
-print_cluster_metrics("KMeans (Raw Data)", y, raw_Kmeans, X_scaled)
-print_cluster_metrics("KMeans (PCA Data)", y, PCA_Kmeans, X_PCA)
-
-# Evaluate GMM
-print_cluster_metrics("GMM (Raw Data)", y, raw_GMM, X_scaled)
-print_cluster_metrics("GMM (PCA Data)", y, PCA_GMM, X_PCA)
+printClusterMetrics("KMeans (Raw Data)", y, raw_Kmeans, X_scaled)
+printClusterMetrics("KMeans (PCA Data)", y, PCA_Kmeans, X_PCA)
+printClusterMetrics("GMM (Raw Data)", y, raw_GMM, X_scaled)
+printClusterMetrics("GMM (PCA Data)", y, PCA_GMM, X_PCA)
