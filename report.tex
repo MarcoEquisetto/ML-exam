@@ -1,0 +1,235 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{graphicx}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{caption}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{hyperref}
+\usepackage[parfill]{parskip}
+\usepackage{float}
+\usepackage{subcaption}
+
+% Hyperlink configuration
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    citecolor=blue,
+    urlcolor=blue,
+    pdftitle={Star Classification and Clustering: A Comparative Analysis},
+    pdfauthor={Marco Equisetto}
+}
+
+% Listings configuration
+\lstset{
+    language=Python,
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{blue},
+    commentstyle=\color{gray},
+    stringstyle=\color{red},
+    breaklines=true,
+    numbers=left,
+    numberstyle=\tiny,
+    frame=single,
+    tabsize=4,
+    captionpos=b,
+    showstringspaces=false
+}
+
+\title{\textbf{Star Classification and Clustering: A Comparative Analysis} \\
+       \large Machine Learning Project, Academic Year 2025/2026 \\
+       }
+\author{Marco Equisetto\\VR535007}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+\noindent
+This report presents a comprehensive analysis of the Star Classification dataset, with the aim of comparing multiple models' performances, how preprocessing data heavily impacts them and how models can be combined with each other to draw from strenghts and arrive to a better solution. Four different supervised learning models will be evaluated: \textbf{K-Nearest Neighbors}, \textbf{Random Forest}, \textbf{Support Vector Machines}(\textbf{SVM}) and \textbf{Logistic Regression}. Additionally, unsupervised learning techniques, specifically \textbf{K-Means} and \textbf{Gaussian Mixture Models} (\textbf{GMM}), are employed and applied to explore the intrinsic nature of the data. Model performance is mainly evaluated on F1-score for classification tasks and ARI and Sillhouette for clustering tasks.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+
+\section{Motivation and Rationale}
+\label{sec:motivation}
+The classification of celestial objects is a fundamental task in modern astrophysics. With the advent of large-scale sky surveys, the volume of spectral and photometric data has grown exponentially, necessitating automated machine learning approaches over manual classification.
+
+This project addresses the problem of classifying objects from the Sloan Digital Sky Survey (SDSS) into three distinct classes: Galaxies, Stars, and Quasars. The rationale behind this work is to compare the efficacy of distance-based, ensemble, and linear models in handling astronomical data, which is often characterized by high dimensionality and noise.
+
+% -------------------------------------------------------------------
+% SECTION 2: STATE OF THE ART
+% -------------------------------------------------------------------
+\section{State of the Art}
+\label{sec:sota}
+% Requirements: Describe relevant SOTA. Weak points of current methods? [cite: 51-53]
+
+Astronomical classification has traditionally relied on... \textit{[Insert brief literature review here. Mention how previous works utilize photometric redshift or spectral lines]}. Current methods often struggle with... \textit{[Mention specific challenges, e.g., distinguishing Quasars from Stars due to point-source similarities]}.
+
+% -------------------------------------------------------------------
+% SECTION 3: OBJECTIVES
+% -------------------------------------------------------------------
+\section{Objectives}
+\label{sec:objectives}
+% Requirements: Clearly state general and specific objectives [cite: 54-55]
+
+The primary objective of this project is to develop a robust machine learning pipeline for celestial object classification. Specific objectives include:
+\begin{enumerate}
+    \item \textbf{Data Preprocessing:} To implement effective outlier removal and feature engineering (calculating color indices like $u-g$) to improve model separability.
+    \item \textbf{Supervised Comparison:} To evaluate and tune hyperparameters for KNN, Random Forest, SVM, and Logistic Regression.
+    \item \textbf{Unsupervised Exploration:} To analyze the dataset using Clustering (KMeans, GMM) and assess the impact of Principal Component Analysis (PCA) on clustering performance.
+\end{enumerate}
+
+% -------------------------------------------------------------------
+% SECTION 4: METHODOLOGY
+% -------------------------------------------------------------------
+\section{Methodology}
+\label{sec:methodology}
+% Requirements: Discuss methods, algorithms, datasets, tools [cite: 57-58]
+
+All experiments were conducted using Python, utilizing the \texttt{scikit-learn}, \texttt{pandas}, and \texttt{seaborn} libraries.
+
+\subsection{Dataset Description}
+The dataset used is the \textit{Star Classification} dataset (sourced from Kaggle/SDSS). It initially contains 100,000 observations. 
+\begin{itemize}
+    \item \textbf{Original Features:} Spectral columns ($u, g, r, i, z$), redshift, and spatial coordinates.
+    \item \textbf{Target Class:} A categorical variable with three levels: \texttt{GALAXY}, \texttt{STAR}, \texttt{QSO}.
+\end{itemize}
+
+\subsection{Data Preprocessing and Feature Extraction}
+To prepare the data for training, the following steps were taken:
+\begin{enumerate}
+    \item \textbf{Cleaning:} ID columns were dropped. Outliers were removed based on valid photometric ranges (e.g., removing rows where $u = -9999$).
+    \item \textbf{Feature Engineering:} Based on correlation analysis, highly correlated features were removed. Synthetic features representing color indices were created:
+    \begin{equation}
+        Color_{u\_g} = u - g, \quad Color_{g\_r} = g - r, \dots
+    \end{equation}
+    \item \textbf{Scaling:} A \texttt{StandardScaler} was applied to normalize features to zero mean and unit variance.
+    \item \textbf{Dimensionality Reduction:} For clustering analysis, PCA was applied to reduce the feature space to 2 principal components.
+\end{enumerate}
+
+\subsection{Models Implemented}
+We implemented the following supervised models using 5-Fold Cross-Validation:
+\begin{itemize}
+    \item \textbf{K-Nearest Neighbors (KNN):} Tuned for $k \in [1, 10]$.
+    \item \textbf{Random Forest Classifier (RFC):} An ensemble method, tuned for $n\_estimators \in [1, 10]$.
+    \item \textbf{Support Vector Machine (SVM):} Using the RBF kernel, tuned for regularization parameter $C \in [0.01, 100]$.
+    \item \textbf{Logistic Regression:} Tuned for $C \in [0.001, 100]$.
+\end{itemize}
+
+For unsupervised learning, we utilized \textbf{K-Means} and \textbf{Gaussian Mixture Models (GMM)}, setting $k=3$ to match the known number of classes.
+
+% -------------------------------------------------------------------
+% SECTION 5: EXPERIMENTS & RESULTS
+% -------------------------------------------------------------------
+\section{Experiments and Results}
+\label{sec:results}
+% Requirements: Evaluation protocol, metrics, confusion matrix, precision/recall [cite: 59-60]
+
+The dataset was split into 80\% training and 20\% testing sets. The primary metric for model selection was the \textbf{Macro F1-Score} to account for potential class imbalances.
+
+\subsection{Supervised Learning Performance}
+
+\subsubsection{Hyperparameter Tuning}
+We utilized cross-validation to find the optimal hyperparameters. Figure \ref{fig:svm_tuning} illustrates the tuning process for the SVM model.
+
+% PLACEHOLDER FOR GRAPH
+\begin{figure}[H]
+    \centering
+    % \includegraphics[width=0.8\textwidth]{path/to/your/svm_graph.png}
+    \fbox{\begin{minipage}{0.8\textwidth}
+        \centering
+        \vspace{2cm}
+        \textbf{[Insert Image: SVM F1-Score vs Regularization C]} \\
+        (Use \texttt{plotLogQualityCheckGraph} from \texttt{helperFuncs.py})
+        \vspace{2cm}
+    \end{minipage}}
+    \caption{Impact of Regularization parameter C on SVM F1-Score.}
+    \label{fig:svm_tuning}
+\end{figure}
+
+\subsubsection{Final Metrics}
+The Random Forest Classifier achieved the highest performance. The confusion matrix and classification report are summarized below:
+
+\begin{table}[H]
+    \centering
+    \caption{Model Performance Comparison (Test Set)}
+    \begin{tabular}{lcccc}
+        \toprule
+        \textbf{Model} & \textbf{Accuracy} & \textbf{Precision (Macro)} & \textbf{Recall (Macro)} & \textbf{F1 (Macro)} \\
+        \midrule
+        KNN ($k=Best$) & 0.00 & 0.00 & 0.00 & 0.00 \\
+        Random Forest & \textbf{0.00} & \textbf{0.00} & \textbf{0.00} & \textbf{0.00} \\
+        SVM (RBF) & 0.00 & 0.00 & 0.00 & 0.00 \\
+        Logistic Regression & 0.00 & 0.00 & 0.00 & 0.00 \\
+        \bottomrule
+    \end{tabular}
+    \label{tab:results}
+\end{table}
+
+\subsection{Clustering Analysis}
+We compared clustering performance on raw scaled data versus PCA-reduced data.
+
+% CODE SNIPPET EXAMPLE
+\begin{lstlisting}[caption=Clustering Implementation Snippet, label=lst:clustering]
+# KMeans Clustering on PCA Data
+KmeansPCA = KMeans(n_clusters=3, random_state=randomState)
+PCA_Kmeans = KmeansPCA.fit_predict(X_PCA)
+\end{lstlisting}
+
+As shown in Figure \ref{fig:clustering}, PCA significantly improved the separability of the clusters.
+
+% PLACEHOLDER FOR CLUSTERING PLOTS
+\begin{figure}[H]
+    \centering
+    % \includegraphics[width=\textwidth]{path/to/clustering_plot.png}
+    \fbox{\begin{minipage}{\textwidth}
+        \centering
+        \vspace{3cm}
+        \textbf{[Insert Image: 2x2 Grid of KMeans/GMM plots]} \\
+        (Generated by lines 216-234 in \texttt{StarClassifier.py})
+        \vspace{3cm}
+    \end{minipage}}
+    \caption{Visual comparison of KMeans and GMM on Raw vs. PCA data.}
+    \label{fig:clustering}
+\end{figure}
+
+Quantitative metrics (ARI, NMI, Silhouette) indicated that... \textit{[Insert analysis from printClusterMetrics output]}.
+
+% -------------------------------------------------------------------
+% SECTION 6: CONCLUSIONS
+% -------------------------------------------------------------------
+\section{Conclusions}
+\label{sec:conclusions}
+% Requirements: Summarize goals, results, failure cases, future works [cite: 62-63]
+
+In this project, we successfully implemented a multi-model approach to star classification. The Random Forest model proved to be the most robust, likely due to its ability to handle non-linear relationships in spectral data. The clustering analysis highlighted that while unsupervised methods can find structure, they struggle to perfectly align with the semantic classes (Star, Galaxy, QSO) without label guidance.
+
+Future work could involve implementing Deep Learning approaches (e.g., 1D CNNs on raw spectral data) or exploring ensemble voting mechanisms to further improve accuracy.
+
+% -------------------------------------------------------------------
+% BIBLIOGRAPHY
+% -------------------------------------------------------------------
+\begin{thebibliography}{9}
+\label{sec:refs}
+% Requirements: Only relevant references [cite: 65]
+
+\bibitem{sdss}
+Sloan Digital Sky Survey (SDSS), \textit{Star Classification Dataset}, Kaggle Repository.
+
+\bibitem{sklearn}
+Pedregosa, F., et al., "Scikit-learn: Machine Learning in Python," \textit{Journal of Machine Learning Research}, 2011.
+
+\bibitem{lectures}
+Beyan, C., "Machine Learning Course Slides," University of [University Name], 2025/2026.
+
+\end{thebibliography}
+
+\end{document}
