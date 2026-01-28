@@ -9,7 +9,8 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import LabelEncoder
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.svm import LinearSVC
+from sklearn.svm import SVC
+from sklearn.linear_model import LogisticRegression
 from sklearn.decomposition import PCA
 from sklearn.mixture import GaussianMixture
 from sklearn.cluster import KMeans
@@ -33,7 +34,7 @@ maxEstimators = 10
 tempK = 15
 tempEstimators = 100
 
-# Import the Star Classification Dataset and print its shape
+# Import the Dataset and print its shape
 dataset = pd.read_csv('./dataset/star_classification.csv')
 print("\n\n> Star Classification Dataset")
 print(dataset)
@@ -46,7 +47,7 @@ columnsToDrop = ['obj_ID', 'run_ID', 'rerun_ID', 'cam_col', 'field_ID', 'spec_ob
 toMove = ['class']
 dataset = dataset.drop(columns=columnsToDrop)
 print(f"\n> Dropping ID columns from dataset...\n> New Shape: {dataset.shape}")
-new = dataset.columns.difference(toMove).to_list()+toMove
+new = dataset.columns.difference(toMove).to_list() + toMove
 dataset = dataset[new]
 
 
@@ -54,7 +55,8 @@ dataset = dataset[new]
 print(f"\n\n> Check for N/A values since they make the dataset more sparse and therefore hinder the accuracy of the models")
 print(f'Missing values: {dataset.isna().any().any()}')
 print(f'Duplicated rows: {dataset.duplicated().any()}')
-print(f"> No N/A values or duplicated rows found in the dataset")
+if not (dataset.isna().any().any() | dataset.duplicated().any()):
+    print(f"> No N/A values or duplicated rows found in the dataset")
 
 
 # Pre-check for outliers
@@ -64,7 +66,7 @@ print(f"\n> Deleting outliers...")
 dataset = dataset[dataset['u'] != -9999]
 dataset = dataset[dataset['g'] != -9999]
 dataset = dataset[dataset['z'] != -9999]
-print(f"> Outliers removed. New Shape: {dataset.shape}")
+print(f"> Outliers removed... New Shape: {dataset.shape}")
 
 
 # Check class distribution
@@ -114,9 +116,8 @@ dataset['u_g'] = dataset['u'] - dataset['g']
 dataset['g_r'] = dataset['g'] - dataset['r']
 dataset['r_i'] = dataset['r'] - dataset['i']
 dataset['i_z'] = dataset['i'] - dataset['z']
-dataset = dataset.drop(columns=['u', 'g', 'i', 'z', 'redshift'])
+dataset = dataset.drop(columns=['u', 'g', 'i', 'z', 'redshift', 'alpha', 'delta'])
 for pair in pairs:
-    # Keep the first out of the pair of features
     toDrop = pair[1]
     if toDrop in dataset.columns:
         dataset = dataset.drop(columns=[toDrop])
@@ -150,7 +151,7 @@ print(f"\n\n> Model Training and Evaluation\n> Models to be implemented:\n1. KNe
 # KNN training
 Ks = range(1, maxK + 1)
 KNNcrossValidationScores = []
-print(f"\n\n> KNN training: evaluate KNearestNeighbors classifiers with K ranging from 1 to {max(Ks)} using 5-Fold Cross Validation and F1-score (macro) as metrics")
+print(f"\n\n> KNN training: evaluate KNNs with k ranging from 1 to {max(Ks)} using 5-Fold Cross Validation and F1-score (macro) as metrics")
 for n_neighbors in Ks:
     pipeline = make_pipeline(StandardScaler(), KNeighborsClassifier(n_neighbors=n_neighbors))
     scores = cross_val_score(pipeline, X_train, y_train, cv=5, scoring='f1_macro')
@@ -174,7 +175,7 @@ print(f"Accuracy: {accuracy_score(y_test, predVal):.4f}")
 # Random Forest Classifier training
 estimators = range(1, maxEstimators + 1)
 RFcrossValidationScores = []
-print(f"\n\n> Random Forest Classifier training: evaluate Random Forest classifiers with n_estimators ranging from 1 to {max(estimators)} using 5-Fold Cross Validation and F1-score (macro) as metrics")
+print(f"\n\n> Random Forest Classifier training: evaluate RFCs with n_estimators ranging from 1 to {max(estimators)} using 5-Fold Cross Validation and F1-score (macro) as metrics")
 for n_estimators in estimators:
     pipeline = make_pipeline(StandardScaler(), RandomForestClassifier(n_estimators=n_estimators, random_state=randomState))
     scores = cross_val_score(pipeline, X_train, y_train, cv=5, scoring='f1_macro')
@@ -195,12 +196,17 @@ print(f"Accuracy: {accuracy_score(y_test, predVal):.4f}")
 
 
 # SVM training
-Cs = [0.001, 0.01, 0.1, 1, 10, 100]
+sampleIndex = np.random.choice(X_train.index, size=int(len(X_train)*0.1), replace=False)
+Xsplit = X_train.loc[sampleIndex]
+ysplit = y_train.loc[sampleIndex]
+print(f"\n> Tuning SVM on subset of {len(Xsplit)} rows...")
+
+Cs = [0.01, 1, 10, 100]
 SVMcrossValidationScores = []
-print(f"\n\n> SVM training: evaluate SVM classifiers with C ranging from 1 to {max(Cs)} using 5-Fold Cross Validation and F1-score (macro) as metrics")
+print(f"\n\n> SVM training: evaluate SVM classifiers with C ranging inside {Cs} using 5-Fold Cross Validation and F1-score (macro) as metrics")
 for C in Cs:
-    LSVCPipeline = make_pipeline(StandardScaler(), LinearSVC(C=C, random_state=randomState))
-    scores = cross_val_score(LSVCPipeline, X_train, y_train, cv=5, scoring='f1_macro')
+    SVCPipeline = make_pipeline(StandardScaler(), SVC(C=C, kernel='rbf', random_state=randomState))
+    scores = cross_val_score(SVCPipeline, Xsplit, ysplit, cv=5, scoring='f1_macro')
     SVMcrossValidationScores.append(scores.mean())
     print(f"> C = {C}, F1-score (mean of batch) = {scores.mean():.4f}")
 
@@ -208,10 +214,35 @@ for C in Cs:
 bestC = Cs[np.argmax(SVMcrossValidationScores)]
 
 print(f"\n> Best validation F1-score: {max(SVMcrossValidationScores):.4f} achieved at C = {bestC}... Retrain SVM with best C to show related graphs")
-bestLSVCPipeline = make_pipeline(StandardScaler(), LinearSVC(C=bestC, random_state=randomState))
-bestLSVCPipeline.fit(X_train, y_train)
-predVal = bestLSVCPipeline.predict(X_test)
+bestSVCPipeline = make_pipeline(StandardScaler(), SVC(C=bestC, kernel='rbf', random_state=randomState))
+bestSVCPipeline.fit(X_train, y_train)
+predVal = bestSVCPipeline.predict(X_test)
 plotQualityCheckGraph(SVMcrossValidationScores, bestC, max(SVMcrossValidationScores), "SVM")
+
+print(f"Accuracy: {accuracy_score(y_test, predVal):.4f}")
+
+
+
+# Logistic Regression training
+LR_Cs = [0.001, 0.01, 0.1, 1, 10, 100]
+LRcrossValidationScores = []
+
+print(f"\n\n> Logistic Regression training: evaluate LRs with C ranging inside {LR_Cs} using 5-Fold Cross Validation and F1-score (macro) as metrics")
+for C in LR_Cs:
+    LRPipeline = make_pipeline(StandardScaler(), LogisticRegression(C=C, random_state=randomState))
+    scores = cross_val_score(LRPipeline, X_train, y_train, cv=5, scoring='f1_macro')
+    LRcrossValidationScores.append(scores.mean())
+    print(f"> C = {C}, F1-score (mean of batch) = {scores.mean():.4f}")
+
+# Extrapolate best C
+bestLR_C = LR_Cs[np.argmax(LRcrossValidationScores)]
+
+print(f"\n> Best validation F1-score: {max(LRcrossValidationScores):.4f} achieved at C = {bestLR_C}... Retrain Logistic Regression with best C to show related graphs")
+
+bestLRPipeline = make_pipeline(StandardScaler(), LogisticRegression(C=bestLR_C, random_state=randomState))
+bestLRPipeline.fit(X_train, y_train)
+predVal = bestLRPipeline.predict(X_test)
+plotQualityCheckGraph(LRcrossValidationScores, bestLR_C, max(LRcrossValidationScores), "Logistic Regression")
 
 print(f"Accuracy: {accuracy_score(y_test, predVal):.4f}")
 

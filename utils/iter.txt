@@ -46,3 +46,8 @@ It is to note that, even if of poor performance, PCA did impact precision meanin
 Evidently, this dataset is not suitable for a clustering attemp.
 
 KNN and RFC seem to perform well, achieving around 90% accuracy given a Hyperparameter that performs well for each.
+
+Exchanged LinearSVC for SVC with rbf kernel to test if non linearly separable data is better analyzed with such a kernel as one last test for SVM
+
+'alpha' and 'delta' features dropped by default because they are position features, which do not help classification at all and might hinder performance introducing noise
+
