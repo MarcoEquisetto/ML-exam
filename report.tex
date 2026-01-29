@@ -68,26 +68,30 @@ This project addresses the problem of classifying objects from the Sloan Digital
 
 \section{State of the Art}
 \label{sec:sota}
-Astronomical classification has traditionally relied on... \textit{[Insert brief literature review here. Mention how previous works utilize photometric redshift or spectral lines]}. Current methods often struggle with... \textit{[Mention specific challenges, e.g., distinguishing Quasars from Stars due to point-source similarities]}.
+Astronomical classification has traditionally relied on the \textit{Morgan-Keenan} (MK) method, where each star has a spectral class and a luminosity class assigned to it. It has evolved from manual inspection to automatic pipelines capable of processing and handling data of orders of magnitude that are incomparable to those who were analyzed by hand. Current state-of-the-art methods generally fall into two categories depending on the input data format: ensemble methods for tabular photometric data and Deep Learning architectures for raw spectral or time-series data.\\For datasets consisting of extracted features (magnitudes, colors, redshift), much like the dataset treated in this project, Gradient Boosted Decision Trees (GBDTs) are currently considered the gold standard, which is a good giveaway of why Random Forest Classifier (RFC) was the model which seemed to perform the best in this task as well.\\While tabular data with few selected features is efficient, the highest level of accuracy is obtained through the use of  "raw" data, these being mathematical data like \textit{1D-Spectra} (a combination of intensity and wavelength) or \textit{light curves} (brightness over time). Such data types are of complicated distributions and huge quantities, rendering them impossible to handle by simple Machine Learning models, and therefore more suitable for Deep Learning models, such as Neural Networks.\\Despite all the technological advancements, the field of stellar classification still faces many hurdles, mainly:
+\begin{itemize}
+    \item \textbf{Imbalance}: The nature of the universe renders some objects much rarer than others (e.g. highly redshifted Quasars) and therefore data about said objects can be extremely hard to obtain, making it difficult to train models with equal representation of all classes.
+    \item \textbf{Domain Shift}: Due to how much celestial object can vary both inter and intra classes, training a model on one dataset with labeled data from one survey and then applying it to another dataset might result in poor performance due to the presence of different level of noise profiles and instrument sensitivity, which is always inevitable when data comes from different sources in this field.
+\end{itemize}
 
 \section{Objectives}
 \label{sec:objectives}
 The primary objective of this project is to develop a robust machine learning pipeline for celestial object classification and to find out which of the tested models better fits the task at hand. Specific objectives include:
 \begin{enumerate}
     \item \textbf{Data Preprocessing:} To implement effective outlier removal and feature engineering (calculating color indices like $u-g$) to improve model separability and to remove unwanted noisy features such as position based features (namely $alpha$ and $delta$).
-    \item \textbf{Supervised Comparison:} To evaluate and tune hyperparameters for KNN, Random Forest, SVM, and Logistic Regression.
+    \item \textbf{Supervised Comparison:} To evaluate and tune hyperparameters for KNN, Random Forest, SVM, and Logistic Regression to find the best performing one for each of them.
     \item \textbf{Unsupervised Exploration:} To analyze the dataset using Clustering (KMeans, GMM) and assess the impact of Principal Component Analysis (PCA) on clustering performance.
 \end{enumerate}
 
 
 \section{Methodology}
 \label{sec:methodology}
-All experiments were conducted using Python, utilizing the \texttt{scikit-learn}, \texttt{pandas}, and \texttt{seaborn} libraries. The single trainings of the various methods were developed separately and then brought together in one single train cycle, to uniform all of them and put all models in the same starting conditions, distribution and random seed generation.
+All experiments were conducted using Python, utilizing the \texttt{scikit-learn}, \texttt{pandas}, and \texttt{seaborn} libraries specifically, combined with performance metric libraries. The single trainings of the various methods were developed separately and then brought together in one single train cycle, to uniform all of them and put all models in the same starting conditions, distribution and random seed generation.
 
 \subsection{Dataset Description}
 The dataset used is the \textit{Star Classification} dataset (sourced from Kaggle/SDSS). It initially contains 100,000 observations. 
 \begin{itemize}
-    \item \textbf{Original Features:} Spectral columns ($u, g, r, i, z$), redshift, various IDs, and spatial coordinates.
+    \item \textbf{Original Features:} Spectral columns ($u, g, r, i, z$), redshift, various IDs, and spatial coordinates, namely $alpha$ and $delta$.
     \item \textbf{Target Class:} A categorical variable with three levels: \texttt{GALAXY}, \texttt{STAR}, \texttt{QSO}.
 \end{itemize}
 
@@ -98,32 +102,58 @@ To prepare the data for training, the following steps were taken:
 
 \subsubsection{\textbf{Missing Values Check}}: Missing values introduce sparsity and reduce precision of models if many are present. In this specific dataset, the procedure did not detect any missing value, so no real removal action was performed.
 
-\subsubsection{\textbf{Outliers Detection:}} Outliers were removed based on valid photometric ranges (e.g., removing rows where $u = -9999$). There is an important observation that needs to be made regarding the freature \textit{redshift}: when applying standard outlier detection methods, like GMM (good to detect outliers, if a point has a very low percentage to belong to any cluster it means it is an outlier) or using the 1.5IQR (Interquartile Range) rule, almost all points were being identified as outliers, indicating that data was multi-modal and therefore non-Gaussian. This meant that the IQR rule treated the variation between different classes (Stars vs. Quasars) as statistical anomalies.\\With this being the case, I decided to keep the feature and the entries as valid data.
+\subsubsection{\textbf{Outliers Detection:}} Outliers were removed based on valid photometric ranges (e.g., removing rows where $u = -9999$). There is an important observation that needs to be made regarding the feature \textit{redshift}: when applying standard outlier detection methods, like GMM (good to detect outliers since if a point has a very low percentage to belong to any cluster it means it is an outlier) or using the 1.5IQR (Interquartile Range) rule, almost all points were being identified as outliers, indicating that data was multi-modal and therefore non-Gaussian. This meant that the IQR rule treated the variation between different classes (Stars vs. Quasars) as statistical anomalies.\\With this being the case, I decided to keep the feature and the entries as valid data.
 
-\subsubsection{\textbf{Feature Engineering:}} Based on correlation analysis, highly correlated features were removed. Synthetic features representing color indices were created:
+\subsubsection{\textbf{Feature Engineering:}} The features had the following distributions:
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{Figure_1.png}
+    \caption{\textbf{Feature Distribution}: This plot visualizes how each of the post-preprocessing features is distributed inside each class. The most interesting feature is \textit{redshift}, as can be seen by its peculiar distribution with respect to the other ones.}
+    \label{fig:distribution}
+\end{figure}
+
+And based on correlation analysis produced the following correlation matrix:
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{Figure_2.png}
+    \caption{\textbf{Initial Correlation Matrix}: The initial correlation analysis. It is noticeable how many features are highly correlated with each other. This denotes a need to act on them, deleting the highly correlated ones, which in this analysis were considered as having a correlation index higher than 0.9.}
+    \label{fig:correlationMatrix1}
+\end{figure}
+
+As mentioned, this correlation matrix heavily implies some action needs to be taken to fix the high correlation between features.\\After deleting the correlated features and introducing the synthetic ones, the following new correlation matrix is produced:
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{Figure_3.png}
+    \caption{\textbf{Final Correlation Matrix}: The final correlation analysis. Features are now much less correlated and appear to be distint enough to be more than suitable for the following analysis steps.}
+    \label{fig:correlationMatrix2}
+\end{figure}
+
+With this purification step completed, highly correlated features were removed. Synthetic features representing color indices were created:
 \begin{equation}
     Color_{u\_g} = u - g, \quad Color_{g\_r} = g - r, \dots
 \end{equation}
 
+
 \subsubsection{\textbf{Scaling:}} A \texttt{StandardScaler} was applied to normalize features to zero mean and unit variance.
 
-\subsubsection{\textbf{Dimensionality Reduction:}} For clustering analysis, PCA was applied to reduce the feature space to 2 principal components.
+
+\subsubsection{\textbf{Dimensionality Reduction:}} For clustering analysis, PCA was applied to reduce the 
+feature space to 2 principal components.
 
 
 \subsection{Models Implemented}
 We implemented the following supervised models using 5-Fold Cross-Validation:
 \begin{itemize}
-    \item \textbf{K-Nearest Neighbors (KNN):} Tuned for $k \in [1, 10]$.
-    \item \textbf{Random Forest Classifier (RFC):} An ensemble method, tuned for $n\_estimators \in [1, 10]$.
-    \item \textbf{Support Vector Machine (SVM):} Using the RBF kernel, tuned for regularization parameter $C \in [0.01, 100]$.
-    \item \textbf{Logistic Regression:} Tuned for $C \in [0.001, 100]$.
+    \item \textbf{K-Nearest Neighbors (KNN):} Tuned for $k \in [1, 50]$.
+    \item \textbf{Random Forest Classifier (RFC):} An ensemble method, tuned for $n\_estimators \in [1, 50]$.
+    \item \textbf{Support Vector Machine (SVM):} Using the RBF kernel, tuned for regularization parameter $C \in [0.001, 0.01, 0.1, 1, 10, 100]$.
+    \item \textbf{Logistic Regression:} Tuned for $C \in [0.001, 0.01, 0.1, 1, 10, 100]$.
 \end{itemize}
 
-For unsupervised learning, we utilized \textbf{K-Means} and \textbf{Gaussian Mixture Models (GMM)}, setting $k=3$ to match the known number of classes.
+For unsupervised learning, \textbf{K-Means} and \textbf{Gaussian Mixture Models (GMM)} were utilized, setting $k=3$ to match the known number of classes.
 
-% -------------------------------------------------------------------
-% SECTION 5: EXPERIMENTS & RESULTS
-% -------------------------------------------------------------------
+
 \section{Experiments and Results}
 \label{sec:results}
 % Requirements: Evaluation protocol, metrics, confusion matrix, precision/recall [cite: 59-60]
@@ -198,23 +228,18 @@ As shown in Figure \ref{fig:clustering}, PCA significantly improved the separabi
 
 Quantitative metrics (ARI, NMI, Silhouette) indicated that... \textit{[Insert analysis from printClusterMetrics output]}.
 
-% -------------------------------------------------------------------
-% SECTION 6: CONCLUSIONS
-% -------------------------------------------------------------------
+
 \section{Conclusions}
 \label{sec:conclusions}
 % Requirements: Summarize goals, results, failure cases, future works [cite: 62-63]
 
 In this project, we successfully implemented a multi-model approach to star classification. The Random Forest model proved to be the most robust, likely due to its ability to handle non-linear relationships in spectral data. The clustering analysis highlighted that while unsupervised methods can find structure, they struggle to perfectly align with the semantic classes (Star, Galaxy, QSO) without label guidance.
 
-Future work could involve implementing Deep Learning approaches (e.g., 1D CNNs on raw spectral data) or exploring ensemble voting mechanisms to further improve accuracy.
+Future work could involve implementing Deep Learning approaches to further improve accuracy and reliability of the classification of cosmic bodies.
 
-% -------------------------------------------------------------------
-% BIBLIOGRAPHY
-% -------------------------------------------------------------------
+
 \begin{thebibliography}{9}
 \label{sec:refs}
-% Requirements: Only relevant references [cite: 65]
 
 \bibitem{sdss}
 Sloan Digital Sky Survey (SDSS), \textit{Star Classification Dataset}, Kaggle Repository.
@@ -223,7 +248,7 @@ Sloan Digital Sky Survey (SDSS), \textit{Star Classification Dataset}, Kaggle Re
 Pedregosa, F., et al., "Scikit-learn: Machine Learning in Python," \textit{Journal of Machine Learning Research}, 2011.
 
 \bibitem{lectures}
-Beyan, C., "Machine Learning Course Slides," University of [University Name], 2025/2026.
+Beyan, C., "Machine Learning Course Slides," University of Verona, A.Y. 2025/2026.
 
 \end{thebibliography}
 
