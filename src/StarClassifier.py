@@ -27,12 +27,8 @@ from helperFuncs import drawCorrelationMatrix, plotQualityCheckGraph, printClust
 randomState = 42
 
 # Hyperparameters max ranges
-maxK = 10
-maxEstimators = 10
-
-# TODO: Delete this
-tempK = 15
-tempEstimators = 100
+maxK = 100
+maxEstimators = 100
 
 # Import the Dataset and print its shape
 dataset = pd.read_csv('./dataset/star_classification.csv')
@@ -142,7 +138,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 
 ## Model Training and Evaluation
 print(f"\n\n> Model Training and Evaluation\n> Models to be implemented:\n1. KNeighborsClassifier\n2. RandomForestClassifier\n3. Support Vector Machine (SVM)")
-
+'''
 # KNN training
 Ks = range(1, maxK + 1)
 KNNcrossValidationScores = []
@@ -157,8 +153,8 @@ for n_neighbors in Ks:
 bestK = Ks[np.argmax(KNNcrossValidationScores)]
 
 # Retrain with that K to show graphs related to this iteration
-print(f"\n> Best k value for KNN found to be {bestK} with F1-score = {max(KNNcrossValidationScores):.4f}: Retraining KNN with best k to show related graphs")
-bestKNNPipeline = make_pipeline(StandardScaler(), KNeighborsClassifier(tempK))
+print(f"\n> Best k value for KNN found to be {bestK} with F1-score = {max(KNNcrossValidationScores):.4f}: Retraining KNN with best k to show related graphs and metrics")
+bestKNNPipeline = make_pipeline(StandardScaler(), KNeighborsClassifier(n_neighbors=bestK))
 bestKNNPipeline.fit(X_train, y_train)
 predVal = bestKNNPipeline.predict(X_test)
 
@@ -166,7 +162,7 @@ plotQualityCheckGraph(KNNcrossValidationScores, bestK, max(KNNcrossValidationSco
 print(f"Accuracy: {accuracy_score(y_test, predVal):.4f}")
 print(f"Precision: {precision_score(y_test, predVal, average='macro'):.4f}")
 print(f"Recall: {recall_score(y_test, predVal, average='macro'):.4f}")
-
+'''
 
 # Random Forest Classifier training
 estimators = range(1, maxEstimators + 1)
@@ -182,7 +178,7 @@ for n_estimators in estimators:
 bestEstimator = estimators[np.argmax(RFcrossValidationScores)]
 
 print(f"\n> Best validation F1-score: {max(RFcrossValidationScores):.4f} achieved at n_estimators = {bestEstimator}... Retrain RFC with best n_estimators to show related graphs")
-bestRFCPipeline = make_pipeline(StandardScaler(), RandomForestClassifier(n_estimators=tempEstimators, random_state=randomState))
+bestRFCPipeline = make_pipeline(StandardScaler(), RandomForestClassifier(n_estimators=bestEstimator, random_state=randomState))
 bestRFCPipeline.fit(X_train, y_train)
 predVal = bestRFCPipeline.predict(X_test)
 
@@ -199,7 +195,7 @@ Xsplit = X_train.loc[sampleIndex]
 ysplit = y_train.loc[sampleIndex]
 print(f"\n> Tuning SVM on subset of {len(Xsplit)} rows...")
 
-Cs = [0.01, 1, 10, 100]
+Cs = [0.001, 0.01, 0.1, 1, 10, 100]
 SVMcrossValidationScores = []
 print(f"\n\n> SVM training: evaluate SVM classifiers with C ranging inside {Cs} using 5-Fold Cross Validation and F1-score (macro) as metrics")
 for C in Cs:

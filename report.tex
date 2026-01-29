@@ -62,7 +62,7 @@ This report presents a comprehensive analysis of the Star Classification dataset
 
 \section{Motivation and Rationale}
 \label{sec:motivation}
-The classification of celestial objects is a fundamental task in modern astrophysics. With the advent of large-scale sky surveys, and the ever increasing amount of satellites, telescopes, the volume of spectral and photometric data has grown exponentially, creating the need to move from manual classification to machine learning models.
+The classification of celestial objects is a fundamental task in modern astrophysics. With the advent of large-scale sky surveys, and the ever increasing amount of satellites and telescopes, the volume of spectral and photometric data has grown exponentially, creating the need to move from manual classification to machine learning models.
 
 This project addresses the problem of classifying objects from the Sloan Digital Sky Survey (SDSS) into three distinct classes: Galaxies, Stars, and Quasars. The rationale behind this work is to compare the efficacy of distance-based, ensemble, and linear models in handling astronomical data, which is often characterized by high dimensionality and noise.
 
@@ -102,7 +102,7 @@ To prepare the data for training, the following steps were taken:
 
 \subsubsection{\textbf{Missing Values Check}}: Missing values introduce sparsity and reduce precision of models if many are present. In this specific dataset, the procedure did not detect any missing value, so no real removal action was performed.
 
-\subsubsection{\textbf{Outliers Detection:}} Outliers were removed based on valid photometric ranges (e.g., removing rows where $u = -9999$). There is an important observation that needs to be made regarding the feature \textit{redshift}: when applying standard outlier detection methods, like GMM (good to detect outliers since if a point has a very low percentage to belong to any cluster it means it is an outlier) or using the 1.5IQR (Interquartile Range) rule, almost all points were being identified as outliers, indicating that data was multi-modal and therefore non-Gaussian. This meant that the IQR rule treated the variation between different classes (Stars vs. Quasars) as statistical anomalies.\\With this being the case, I decided to keep the feature and the entries as valid data.
+\subsubsection{\textbf{Outliers Detection:}} Outliers were removed based on valid photometric ranges (e.g., removing rows where $u = -9999$).
 
 \subsubsection{\textbf{Feature Engineering:}} The features had the following distributions:
 \begin{figure}[H]
@@ -143,7 +143,7 @@ feature space to 2 principal components.
 
 
 \subsection{Models Implemented}
-We implemented the following supervised models using 5-Fold Cross-Validation:
+The following supervised models were implemented using 5-Fold Cross-Validation:
 \begin{itemize}
     \item \textbf{K-Nearest Neighbors (KNN):} Tuned for $k \in [1, 50]$.
     \item \textbf{Random Forest Classifier (RFC):} An ensemble method, tuned for $n\_estimators \in [1, 50]$.
@@ -156,29 +156,89 @@ For unsupervised learning, \textbf{K-Means} and \textbf{Gaussian Mixture Models 
 
 \section{Experiments and Results}
 \label{sec:results}
-% Requirements: Evaluation protocol, metrics, confusion matrix, precision/recall [cite: 59-60]
-
 The dataset was split into 80\% training and 20\% testing sets. The primary metric for model selection was the \textbf{Macro F1-Score} to account for potential class imbalances.
+During development, problems arose, prompting solutions that would tackle and try to solve them with the goal of maintaining or bettering performances in mind. The following are the most important ones to discuss.
 
-\subsection{Supervised Learning Performance}
+\subsubsection{The Redshift Feature}
+ There is an important observation that needs to be made regarding the feature \textit{redshift}: when applying standard outlier detection methods, like GMM (good to detect outliers since if a point has a very low percentage to belong to any cluster it means it is an outlier) or using the 1.5IQR (Interquartile Range) rule, almost all points were being identified as outliers, indicating that data was multi-modal and therefore non-Gaussian. This meant that the IQR rule treated the variation between different classes (Stars vs. Quasars) as statistical anomalies. With this in mind, the entries were kept as valid data.\\Another extremely important observation that needs to be made is the influence that the \textit{redshift} feature has on performance of the models. By nature, celestial objects that emit light are highly characterized by this metric, and it is, in fact, a very telling feature: during development, it was discovered that even with minimal input on the dataset, performance on trained models that included this features were already on a degree of accuracy of above 0.97, effectively meaning that the logical correlation between the class of the object and the redshift feature was so high that it was almost as if the data remained labeled even after removing the class feature.\\For the purpose of the task, and in order to give myself more of a challenge, I decided to also drop \textit{redshift} from the features included in the training and testing dataset. By doing so, new challenges arose and classification became less trivial.
 
-\subsubsection{Hyperparameter Tuning}
-We utilized cross-validation to find the optimal hyperparameters. Figure \ref{fig:svm_tuning} illustrates the tuning process for the SVM model.
+ \subsubsection{Synthetic Features}
+ Removing the \textit{redshift} feature (too good at describing class) and $alpha$ and $delta$ features (position based features which have no meaningful information at all as to what object they refer to) meant that now the model only has color-based features to work with, namely:
+ \begin{itemize}
+    \item \textbf{u}: Ultraviolet filter in the photometric system
+    \item \textbf{g}: Green filter in the photometric system
+    \item \textbf{r}: Red filter in the photometric system
+    \item \textbf{i}: Near Infrared filter in the photometric system
+    \item \textbf{z}: Infrared filter in the photometric system
+ \end{itemize}
+ With some of these features being highly correlated with each other (as shown in [\ref{fig:correlationMatrix1}]), the new challenge was to find a way to work with the few remaining features and extrapolate meaningful data from them.\\This is when it was decided to create the following synthetic features:
+ \begin{itemize}
+    \item \textbf{u\_g:} $u - g$ (\textbf{Ultraviolet-Green Index}: Sensitive to hot, young stars and Quasar UV-excess)
+    \item \textbf{g\_r:} $g - r$ (\textbf{Green-Red Index}: A standard measure of surface temperature for main-sequence stars)
+    \item \textbf{r\_i:} $r - i$ (\textbf{Red-Near Infrared Index}: Useful for detecting cooler, redder objects like M-dwarfs)
+    \item \textbf{i\_z:} $i - z$ (\textbf{Near Infrared-Infrared Index}: Helps distinguish high-redshift galaxies)
+ \end{itemize}
+ Introducing synthetic features meant models now had compound attributes with real-world physical meaning they could use during training and evaluation.
 
-% PLACEHOLDER FOR GRAPH
+ \subsubsection{Pipeline Training}
+Initially, data was scaled once after preprocessing and then given to all models. Mistakenly, I did not account for the fact that when \textbf{cross\_val\_score} splits \textbf{X\_train} into internal folds, the validation fold has already influenced the scaler (mean/variance) used on the training fold. This "peeking" can lead to overly optimistic scores.\\By adding a pipeline in training loops, this mistake was easily fixed and data leakage was prevented by scaling the entire training set before the cross-validation loop.
+
+
+\subsection{Supervised Learning Performance- Hyperparameter Tuning and Evaluation}
+Cross-validation was used to find the optimal hyperparameters by training loops: each model was given an incrementally higher hyperparameter to work on the same dataset as all its predecessors. This way it was possible to investigate performance based soley on hyperparameter and not on change of data. Every model will be discussed separately.
+
+\subsubsection{KNearestNeighbour Classifier}
+[DESCRIPTION OF THE MODEL]
+
 \begin{figure}[H]
     \centering
-    % \includegraphics[width=0.8\textwidth]{path/to/your/svm_graph.png}
-    \fbox{\begin{minipage}{0.8\textwidth}
-        \centering
-        \vspace{2cm}
-        \textbf{[Insert Image: SVM F1-Score vs Regularization C]} \\
-        (Use \texttt{plotLogQualityCheckGraph} from \texttt{helperFuncs.py})
-        \vspace{2cm}
-    \end{minipage}}
-    \caption{Impact of Regularization parameter C on SVM F1-Score.}
-    \label{fig:svm_tuning}
+    \includegraphics[width=1\textwidth]{Figure_4.png}
+    \caption{\textbf{K in KNN}: Graph shows how performance (F1-score) grows util a highpoint at $BestK = 15$, where it starts decreasing. In this case, there is a clear winner as for best hyperparameter value.}
+    \label{fig:correlationMatrix2}
 \end{figure}
+Having obtained the best value for K, a new KNN model was trained specifically with this hyperparameter value to show evalutaion metrics on the best version of KNN obtainable on this dataset. These were the obtained results:
+\begin{itemize}
+    \item Accuracy: 0.8678
+    \item Precision: 0.8402
+    \item Recall: 0.8229
+\end{itemize}
+
+
+\subsubsection{Random Forest Classifier}
+[DESCRIPTION OF THE MODEL]
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{Figure_5.png}
+    \caption{\textbf{n\_neighbours in RFC}: Graph shows how performance (F1-score) grows.}
+    \label{fig:correlationMatrix2}
+\end{figure}
+In this case, there seems to be an asyntotic behavior: even though the score increases, it does so ever so slowly, while training time and load increases with an inverse proportion. Taking both information into account, $n\_estimators = 96$ is assumed to be the best hyperparameter without continuing training loop. With this hyperparameter, a new training of RFC is made, which produces the following evaluation metrics:
+\begin{itemize}
+\item Accuracy: 0.8643
+\item Precision: 0.8368
+\item Recall: 0.8188
+\end{itemize}
+
+
+\subsubsection{Support Vector Machines}
+[DESCRIPTION OF THE MODEL]
+
+Initially, all kernel instances were tested, namely $['linear', 'poly', 'rbf', 'sigmoid', 'precomputed']$, each with hyperparameter C ranging in $[0.001, 0.01, 0.1, 1, 10, 100]$. Results showed the best performing, even if with poor performance, were 'linear' and 'rbf' kernels.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{Figure_5.png}
+    \caption{\textbf{n\_neighbours in RFC}: Graph shows how performance (F1-score) grows. In this case, there seems to be an asyntotic behaviour: even though the score increases, it does so ever so slowly, while training time and load increases with an inverse proportion. Taking both information into account, a good balance between \textbf{performance} and \textbf{training time} is achieved with $n\_estimators = TEMP$}
+    \label{fig:correlationMatrix2}
+\end{figure}
+Having obtained the best value for K, a new KNN model was trained specifically with this hyperparameter value to show evalutaion metrics on the best version of KNN obtainable on this dataset. These were the obtained results:
+\begin{itemize}
+    \item Accuracy: 0.8678
+    \item Precision: 0.8402
+    \item Recall: 0.8229
+\end{itemize}
+
 
 \subsubsection{Final Metrics}
 The Random Forest Classifier achieved the highest performance. The confusion matrix and classification report are summarized below:
@@ -211,20 +271,22 @@ PCA_Kmeans = KmeansPCA.fit_predict(X_PCA)
 
 As shown in Figure \ref{fig:clustering}, PCA significantly improved the separability of the clusters.
 
-% PLACEHOLDER FOR CLUSTERING PLOTS
-\begin{figure}[H]
+\begin{table}[H]
     \centering
-    % \includegraphics[width=\textwidth]{path/to/clustering_plot.png}
-    \fbox{\begin{minipage}{\textwidth}
-        \centering
-        \vspace{3cm}
-        \textbf{[Insert Image: 2x2 Grid of KMeans/GMM plots]} \\
-        (Generated by lines 216-234 in \texttt{StarClassifier.py})
-        \vspace{3cm}
-    \end{minipage}}
-    \caption{Visual comparison of KMeans and GMM on Raw vs. PCA data.}
-    \label{fig:clustering}
-\end{figure}
+    \caption{Model Performance Comparison (Test Set)}
+    \begin{tabular}{lcccc}
+        \toprule
+        \textbf{Model} & \textbf{Accuracy} & \textbf{Precision (Macro)} & \textbf{Recall (Macro)} & \textbf{F1 (Macro)} \\
+        \midrule
+        KNN ($k=15$) & 0.8678 & 0.8402 & 0.8229 & 0.8324 \\
+        Random Forest($n\_neighb = 50$) & 0.00 & 0.00 & 0.00 & 0.00 \\
+        SVM (RBF) & 0.00 & 0.00 & 0.00 & 0.00 \\
+        Logistic Regression & 0.00 & 0.00 & 0.00 & 0.00 \\
+        \bottomrule
+    \end{tabular}
+    \label{tab:results}
+\end{table}
+
 
 Quantitative metrics (ARI, NMI, Silhouette) indicated that... \textit{[Insert analysis from printClusterMetrics output]}.
 
