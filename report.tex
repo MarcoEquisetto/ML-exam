@@ -57,63 +57,58 @@ This report presents a comprehensive analysis of the Star Classification dataset
 \tableofcontents
 \newpage
 
+\section{Introduction}
+\label{sec:introduction}
 
 \section{Motivation and Rationale}
 \label{sec:motivation}
-The classification of celestial objects is a fundamental task in modern astrophysics. With the advent of large-scale sky surveys, the volume of spectral and photometric data has grown exponentially, necessitating automated machine learning approaches over manual classification.
+The classification of celestial objects is a fundamental task in modern astrophysics. With the advent of large-scale sky surveys, and the ever increasing amount of satellites, telescopes, the volume of spectral and photometric data has grown exponentially, creating the need to move from manual classification to machine learning models.
 
 This project addresses the problem of classifying objects from the Sloan Digital Sky Survey (SDSS) into three distinct classes: Galaxies, Stars, and Quasars. The rationale behind this work is to compare the efficacy of distance-based, ensemble, and linear models in handling astronomical data, which is often characterized by high dimensionality and noise.
 
-% -------------------------------------------------------------------
-% SECTION 2: STATE OF THE ART
-% -------------------------------------------------------------------
 \section{State of the Art}
 \label{sec:sota}
-% Requirements: Describe relevant SOTA. Weak points of current methods? [cite: 51-53]
-
 Astronomical classification has traditionally relied on... \textit{[Insert brief literature review here. Mention how previous works utilize photometric redshift or spectral lines]}. Current methods often struggle with... \textit{[Mention specific challenges, e.g., distinguishing Quasars from Stars due to point-source similarities]}.
 
-% -------------------------------------------------------------------
-% SECTION 3: OBJECTIVES
-% -------------------------------------------------------------------
 \section{Objectives}
 \label{sec:objectives}
-% Requirements: Clearly state general and specific objectives [cite: 54-55]
-
-The primary objective of this project is to develop a robust machine learning pipeline for celestial object classification. Specific objectives include:
+The primary objective of this project is to develop a robust machine learning pipeline for celestial object classification and to find out which of the tested models better fits the task at hand. Specific objectives include:
 \begin{enumerate}
-    \item \textbf{Data Preprocessing:} To implement effective outlier removal and feature engineering (calculating color indices like $u-g$) to improve model separability.
+    \item \textbf{Data Preprocessing:} To implement effective outlier removal and feature engineering (calculating color indices like $u-g$) to improve model separability and to remove unwanted noisy features such as position based features (namely $alpha$ and $delta$).
     \item \textbf{Supervised Comparison:} To evaluate and tune hyperparameters for KNN, Random Forest, SVM, and Logistic Regression.
     \item \textbf{Unsupervised Exploration:} To analyze the dataset using Clustering (KMeans, GMM) and assess the impact of Principal Component Analysis (PCA) on clustering performance.
 \end{enumerate}
 
-% -------------------------------------------------------------------
-% SECTION 4: METHODOLOGY
-% -------------------------------------------------------------------
+
 \section{Methodology}
 \label{sec:methodology}
-% Requirements: Discuss methods, algorithms, datasets, tools [cite: 57-58]
-
-All experiments were conducted using Python, utilizing the \texttt{scikit-learn}, \texttt{pandas}, and \texttt{seaborn} libraries.
+All experiments were conducted using Python, utilizing the \texttt{scikit-learn}, \texttt{pandas}, and \texttt{seaborn} libraries. The single trainings of the various methods were developed separately and then brought together in one single train cycle, to uniform all of them and put all models in the same starting conditions, distribution and random seed generation.
 
 \subsection{Dataset Description}
 The dataset used is the \textit{Star Classification} dataset (sourced from Kaggle/SDSS). It initially contains 100,000 observations. 
 \begin{itemize}
-    \item \textbf{Original Features:} Spectral columns ($u, g, r, i, z$), redshift, and spatial coordinates.
+    \item \textbf{Original Features:} Spectral columns ($u, g, r, i, z$), redshift, various IDs, and spatial coordinates.
     \item \textbf{Target Class:} A categorical variable with three levels: \texttt{GALAXY}, \texttt{STAR}, \texttt{QSO}.
 \end{itemize}
 
 \subsection{Data Preprocessing and Feature Extraction}
 To prepare the data for training, the following steps were taken:
-\begin{enumerate}
-    \item \textbf{Cleaning:} ID columns were dropped. Outliers were removed based on valid photometric ranges (e.g., removing rows where $u = -9999$).
-    \item \textbf{Feature Engineering:} Based on correlation analysis, highly correlated features were removed. Synthetic features representing color indices were created:
-    \begin{equation}
-        Color_{u\_g} = u - g, \quad Color_{g\_r} = g - r, \dots
-    \end{equation}
-    \item \textbf{Scaling:} A \texttt{StandardScaler} was applied to normalize features to zero mean and unit variance.
-    \item \textbf{Dimensionality Reduction:} For clustering analysis, PCA was applied to reduce the feature space to 2 principal components.
-\end{enumerate}
+
+\subsubsection{\textbf{Cleaning:}} ID columns were dropped since they do not provide any real information and would very likely introduce biases or noise if kept.
+
+\subsubsection{\textbf{Missing Values Check}}: Missing values introduce sparsity and reduce precision of models if many are present. In this specific dataset, the procedure did not detect any missing value, so no real removal action was performed.
+
+\subsubsection{\textbf{Outliers Detection:}} Outliers were removed based on valid photometric ranges (e.g., removing rows where $u = -9999$). There is an important observation that needs to be made regarding the freature \textit{redshift}: when applying standard outlier detection methods, like GMM (good to detect outliers, if a point has a very low percentage to belong to any cluster it means it is an outlier) or using the 1.5IQR (Interquartile Range) rule, almost all points were being identified as outliers, indicating that data was multi-modal and therefore non-Gaussian. This meant that the IQR rule treated the variation between different classes (Stars vs. Quasars) as statistical anomalies.\\With this being the case, I decided to keep the feature and the entries as valid data.
+
+\subsubsection{\textbf{Feature Engineering:}} Based on correlation analysis, highly correlated features were removed. Synthetic features representing color indices were created:
+\begin{equation}
+    Color_{u\_g} = u - g, \quad Color_{g\_r} = g - r, \dots
+\end{equation}
+
+\subsubsection{\textbf{Scaling:}} A \texttt{StandardScaler} was applied to normalize features to zero mean and unit variance.
+
+\subsubsection{\textbf{Dimensionality Reduction:}} For clustering analysis, PCA was applied to reduce the feature space to 2 principal components.
+
 
 \subsection{Models Implemented}
 We implemented the following supervised models using 5-Fold Cross-Validation:
