@@ -51,7 +51,9 @@
 
 \begin{abstract}
 \noindent
-This report presents a comprehensive analysis of the Star Classification dataset, with the aim of comparing multiple models' performances, how preprocessing data heavily impacts them and how models can be combined with each other to draw from strenghts and arrive to a better solution. Four different supervised learning models will be evaluated: \textbf{K-Nearest Neighbors}, \textbf{Random Forest}, \textbf{Support Vector Machines}(\textbf{SVM}) and \textbf{Logistic Regression}. Additionally, unsupervised learning techniques, specifically \textbf{K-Means} and \textbf{Gaussian Mixture Models} (\textbf{GMM}), are employed and applied to explore the intrinsic nature of the data. Model performance is mainly evaluated on F1-score for classification tasks and ARI and Sillhouette for clustering tasks.
+This report presents a comprehensive analysis of the Star Classification dataset, aiming to compare the performance of multiple supervised and unsupervised models. The study investigates how data preprocessing heavily impacts model outcomes and explores how different techniques can be combined to leverage their respective strengths.\\Four distinct supervised learning models are evaluated: \textbf{K-Nearest Neighbors (KNN)}, \textbf{Random Forest}, \textbf{Support Vector Machines (SVM)}, and \textbf{Logistic Regression}. 
+ Additionally, unsupervised learning techniques, specifically \textbf{K-Means} and \textbf{Gaussian Mixture Models (GMM)}, are employed to explore the intrinsic topological nature of the astronomical data. 
+ Model performance is primarily evaluated using the \textbf{F1-score} for classification tasks, while \textbf{Adjusted Rand Index (ARI)} and \textbf{Silhouette Coefficient} are utilized for clustering validation. 
 \end{abstract}
 
 \tableofcontents
@@ -64,7 +66,7 @@ This report presents a comprehensive analysis of the Star Classification dataset
 \label{sec:motivation}
 The classification of celestial objects is a fundamental task in modern astrophysics. With the advent of large-scale sky surveys, and the ever increasing amount of satellites and telescopes, the volume of spectral and photometric data has grown exponentially, creating the need to move from manual classification to machine learning models.
 
-This project addresses the problem of classifying objects from the Sloan Digital Sky Survey (SDSS) into three distinct classes: Galaxies, Stars, and Quasars. The rationale behind this work is to compare the efficacy of distance-based, ensemble, and linear models in handling astronomical data, which is often characterized by high dimensionality and noise.
+This project addresses the problem of classifying objects from the Sloan Digital Sky Survey (SDSS) into three distinct classes: Galaxies, Stars, and Quasars. The rationale behind this work is to compare the efficacy of distance-based, ensemble, and linear models in handling astronomical data, which is often characterized by high dimensionality, considerable size and elevated noise.
 
 \section{State of the Art}
 \label{sec:sota}
