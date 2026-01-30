@@ -196,12 +196,20 @@ Cross-validation was used to find the optimal hyperparameters by training loops:
     \caption{\textbf{K in KNN}: Graph shows how performance (F1-score) grows util a highpoint at $BestK = 15$, where it starts decreasing. In this case, there is a clear winner as for best hyperparameter value.}
     \label{fig:correlationMatrix2}
 \end{figure}
-Having obtained the best value for K, a new KNN model was trained specifically with this hyperparameter value to show evalutaion metrics on the best version of KNN obtainable on this dataset. These were the obtained results:
+Having obtained the best value for K, a new KNN model was trained specifically with this hyperparameter value to show evaluation metrics on the best version of KNN obtainable on this dataset. These were the obtained results:
 \begin{itemize}
+    \item F1-Score: 0.7760
     \item Accuracy: 0.8678
     \item Precision: 0.8402
     \item Recall: 0.8229
 \end{itemize}
+Below is the confusion matrix of KNN with $n\_neighbors = 15$:
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{Figure_6.png}
+    \caption{\textbf{Confusion Matrix}: This matrix shows how good the KNN model was at categorizing objects.}
+    \label{fig:confusionMatrixKNN}
+\end{figure}
 
 
 \subsubsection{Random Forest Classifier}
@@ -215,33 +223,53 @@ Having obtained the best value for K, a new KNN model was trained specifically w
 \end{figure}
 In this case, there seems to be an asyntotic behavior: even though the score increases, it does so ever so slowly, while training time and load increases with an inverse proportion. Taking both information into account, $n\_estimators = 96$ is assumed to be the best hyperparameter without continuing training loop. With this hyperparameter, a new training of RFC is made, which produces the following evaluation metrics:
 \begin{itemize}
-\item Accuracy: 0.8643
-\item Precision: 0.8368
-\item Recall: 0.8188
+    \item F1-Score: 0.7590
+    \item Accuracy: 0.8643
+    \item Precision: 0.8368
+    \item Recall: 0.8188
 \end{itemize}
+Below is the confusion matrix of RFC with $n\_estimators = 96$:
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{Figure_7.png}
+    \caption{\textbf{Confusion Matrix}: This matrix shows how good the RFC model was at categorizing objects.}
+    \label{fig:confusionMatrixRFC}
+\end{figure}
 
 
 \subsubsection{Support Vector Machines}
 [DESCRIPTION OF THE MODEL]
 
-Initially, all kernel instances were tested, namely $['linear', 'poly', 'rbf', 'sigmoid', 'precomputed']$, each with hyperparameter C ranging in $[0.001, 0.01, 0.1, 1, 10, 100]$. Results showed the best performing, even if with poor performance, were 'linear' and 'rbf' kernels.
+Initially, all kernel instances were tested, namely $['linear', 'poly', 'rbf', 'sigmoid']$, only omitting $'precomputed'$ as it requires a specific size of matrix, each with hyperparameter C ranging in $[0.001, 0.01, 0.1, 1, 10, 100]$. Here is a plot that shows the performance of each kernel:
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=1\textwidth]{Figure_5.png}
-    \caption{\textbf{n\_neighbours in RFC}: Graph shows how performance (F1-score) grows. In this case, there seems to be an asyntotic behaviour: even though the score increases, it does so ever so slowly, while training time and load increases with an inverse proportion. Taking both information into account, a good balance between \textbf{performance} and \textbf{training time} is achieved with $n\_estimators = TEMP$}
+    \includegraphics[width=1\textwidth]{Figure_8.png}
+    \caption{\textbf{Performance of SVM}: Graph shows a comparison between kernel modes and how well they performed cycling through the $C$ values. It is apparent the best performing mode was $'rbf'$.}
     \label{fig:correlationMatrix2}
 \end{figure}
-Having obtained the best value for K, a new KNN model was trained specifically with this hyperparameter value to show evalutaion metrics on the best version of KNN obtainable on this dataset. These were the obtained results:
+The graph shows the best kernel mode was 'rbf', which is the expected result: this indirectly confirms that the data is not linearly separable and therefore a linear kernel mode could have never performed well enough to surpass its competitors. RBF has the highest performance because it can "bend" the separation line around data, better fitting the separation and achieving a higher precision and accuracy.\\The statistics that follow are the ones obtained by training a SVM with kernel mode 'rbf' and with $C = 100$:
+
 \begin{itemize}
+    \item F1-Score: 0.8135
     \item Accuracy: 0.8678
     \item Precision: 0.8402
     \item Recall: 0.8229
 \end{itemize}
+Below is the confusion matrix of SVM with $kernel=rbf, C=100$:
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{Figure_9.png}
+    \caption{\textbf{Confusion Matrix}: This matrix shows how good the SVM model was at categorizing objects.}
+    \label{fig:confusionMatrixSVM}
+\end{figure}
+
+
+
 
 
 \subsubsection{Final Metrics}
-The Random Forest Classifier achieved the highest performance. The confusion matrix and classification report are summarized below:
+From the analysis that was conducted, out of all the models that were trained and evaluated, the winner, that is the model that achieved the best results, both in terms of accuracy and training time, is the $Random Forest Classifier$ model. Below is a small table summarizing the results of all models: 
 
 \begin{table}[H]
     \centering
@@ -250,9 +278,10 @@ The Random Forest Classifier achieved the highest performance. The confusion mat
         \toprule
         \textbf{Model} & \textbf{Accuracy} & \textbf{Precision (Macro)} & \textbf{Recall (Macro)} & \textbf{F1 (Macro)} \\
         \midrule
-        KNN ($k=Best$) & 0.00 & 0.00 & 0.00 & 0.00 \\
-        Random Forest & \textbf{0.00} & \textbf{0.00} & \textbf{0.00} & \textbf{0.00} \\
-        SVM (RBF) & 0.00 & 0.00 & 0.00 & 0.00 \\
+        KNN ($k=15$) & 0.8678 & 0.8402 & 0.8229 & 0.7760 \\
+        Random Forest (n\_e = 96) & 0.8643 & 0.8368 & 0.8188 & 0.7590 \\
+        SVM (Rbf, C = 100) & 0.8609 & 0.8397 & 0.8086 & 0.8135 \\
+        SVM (Linear, C = 10) & 0.00 & 0.00 & 0.00 & 0.6842 \\
         Logistic Regression & 0.00 & 0.00 & 0.00 & 0.00 \\
         \bottomrule
     \end{tabular}
@@ -270,23 +299,6 @@ PCA_Kmeans = KmeansPCA.fit_predict(X_PCA)
 \end{lstlisting}
 
 As shown in Figure \ref{fig:clustering}, PCA significantly improved the separability of the clusters.
-
-\begin{table}[H]
-    \centering
-    \caption{Model Performance Comparison (Test Set)}
-    \begin{tabular}{lcccc}
-        \toprule
-        \textbf{Model} & \textbf{Accuracy} & \textbf{Precision (Macro)} & \textbf{Recall (Macro)} & \textbf{F1 (Macro)} \\
-        \midrule
-        KNN ($k=15$) & 0.8678 & 0.8402 & 0.8229 & 0.8324 \\
-        Random Forest($n\_neighb = 50$) & 0.00 & 0.00 & 0.00 & 0.00 \\
-        SVM (RBF) & 0.00 & 0.00 & 0.00 & 0.00 \\
-        Logistic Regression & 0.00 & 0.00 & 0.00 & 0.00 \\
-        \bottomrule
-    \end{tabular}
-    \label{tab:results}
-\end{table}
-
 
 Quantitative metrics (ARI, NMI, Silhouette) indicated that... \textit{[Insert analysis from printClusterMetrics output]}.
 

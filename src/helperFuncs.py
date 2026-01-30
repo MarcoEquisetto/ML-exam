@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
+import numpy as np
 import seaborn as sns
-from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score, silhouette_score
+from sklearn.metrics import adjusted_rand_score, classification_report, confusion_matrix, normalized_mutual_info_score, silhouette_score
 
 def drawCorrelationMatrix(dataset):
     plt.figure(figsize=(12, 10))
@@ -47,4 +48,40 @@ def plotLogQualityCheckGraph(scores, params, bestHyperparameter, bestScore, mode
     plt.scatter(bestHyperparameter, bestScore, color='red', s=150, zorder=5, edgecolors='black')
     
     plt.legend()
+    plt.show()
+
+
+def plotKernelPerformanceComparison(results_dict, Cs):
+    plt.figure(figsize=(12, 6))
+    
+    markers = ['o', 's', '^', 'D', 'v', 'p']
+    
+    for idx, (kernel_name, scores) in enumerate(results_dict.items()):
+        marker = markers[idx % len(markers)]
+        plt.semilogx(Cs, scores, marker=marker, linestyle='-', linewidth=2, label=f'Kernel: {kernel_name}')
+        
+        max_score = max(scores)
+        max_c = Cs[np.argmax(scores)]
+        plt.scatter(max_c, max_score, s=100, edgecolors='black', zorder=10, alpha=0.6)
+
+    plt.title('SVM Kernel Comparison: F1-Score vs Regularization (C)', fontsize=15)
+    plt.xlabel('Regularization Parameter C (Log Scale)', fontsize=12)
+    plt.ylabel('F1-Score (Macro)', fontsize=12)
+    plt.grid(True, which="both", ls="-", alpha=0.3)
+    plt.legend(title="Kernels", fontsize=10)
+    plt.tight_layout()
+    plt.show()
+
+
+def displayConfusionMatrix(y_true, y_pred, model_name, class_names=None):
+    cm = confusion_matrix(y_true, y_pred)
+    
+    plt.figure(figsize=(8, 6))
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Greens', cbar=False,
+                xticklabels=class_names if class_names else "auto",
+                yticklabels=class_names if class_names else "auto")
+    
+    plt.xlabel('Predicted Label', fontsize=12)
+    plt.ylabel('True Label', fontsize=12)
+    plt.title(f'Confusion Matrix: {model_name}', fontsize=14)
     plt.show()
