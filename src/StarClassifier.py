@@ -21,14 +21,14 @@ from sklearn.metrics import f1_score, accuracy_score, precision_score, recall_sc
 from sklearn.pipeline import make_pipeline
 
 # Custom helper functions
-from helperFuncs import drawCorrelationMatrix, plotKernelPerformanceComparison, plotQualityCheckGraph, printClusterMetrics, plotLogQualityCheckGraph, displayConfusionMatrix
+from helperFuncs import drawCorrelationMatrix, plotKernelPerformanceComparison, plotQualityCheckGraph, printClusterMetrics, plotLogQualityCheckGraph, displayConfusionMatrix, outlierDetection
 
 
 randomState = 42
 
 # Hyperparameters max ranges
-maxK = 1
-maxEstimators = 1
+maxK = 100
+maxEstimators = 100
 
 # Import the Dataset and print its shape
 dataset = pd.read_csv('./dataset/star_classification.csv')
@@ -55,14 +55,52 @@ if not (dataset.isna().any().any() | dataset.duplicated().any()):
     print(f"> No N/A values or duplicated rows found in the dataset")
 
 
-# Pre-check for outliers
-print(f"\n\n> Check for outliers in the dataset")
+# Pre-check for error values
+print(f"\n\n> Check for error values in the dataset")
 print(dataset.describe())
-print(f"\n> Deleting outliers...")
+print(f"\n> Deleting Errors...")
 dataset = dataset[dataset['u'] != -9999]
 dataset = dataset[dataset['g'] != -9999]
 dataset = dataset[dataset['z'] != -9999]
-print(f"> Outliers removed... New Shape: {dataset.shape}")
+print(f"> Error values removed... New Shape: {dataset.shape}")
+
+
+
+## Outlier Detection
+detectionFeatures = ['u', 'g', 'r', 'i', 'z', 'redshift']
+X_tmp = dataset[detectionFeatures]
+
+# Run Detection
+mask, scores, threshold = outlierDetection(X_tmp)
+
+# Visualize Detection Results
+fig, axes = plt.subplots(1, 2, figsize=(16, 6))
+plt.suptitle("GMM Outlier Detection Results", fontsize=16)
+
+# 1. Histogram of Likelihoods
+sns.histplot(scores, bins=50, kde=True, ax=axes[0], color='skyblue')
+axes[0].axvline(threshold, color='red', linestyle='--', linewidth=2, label=f'Threshold: {threshold:.2f}')
+axes[0].set_title("Log-Likelihood Distribution")
+axes[0].set_xlabel("Log-Likelihood (Density)")
+axes[0].legend()
+
+# 2. PCA Projection
+pca_vis = PCA(n_components=2, random_state=randomState)
+X_pca_vis = pca_vis.fit_transform(StandardScaler().fit_transform(X_tmp))
+sns.scatterplot(x=X_pca_vis[:,0], y=X_pca_vis[:,1], hue=mask, palette={False: 'gray', True: 'red'}, alpha=0.6, ax=axes[1])
+axes[1].set_title(f"Detected Outliers (Red: {np.sum(mask)} points)")
+axes[1].set_xlabel("PC1")
+axes[1].set_ylabel("PC2")
+
+plt.tight_layout()
+plt.show()
+
+# Apply Removal
+print(f"> Removing {np.sum(mask)} outliers detected via GMM...")
+dataset = dataset[~mask]
+dataset.reset_index(drop=True, inplace=True)
+print(f"> Outliers removed. Final Shape: {dataset.shape}")
+
 
 
 # Check class distribution
@@ -93,75 +131,6 @@ dataset['class'] = LE.fit_transform(dataset['class'])
 print(dataset.head())
 
 
-print("\n\n> Outlier Detection: GMM + 1.5 IQR Rule (With vs Without Redshift)")
-# Version with Redshift
-cols_with_z = ['u', 'g', 'r', 'i', 'z', 'redshift']
-X_with_z = dataset[cols_with_z]
-
-# Version 2: Without Redshift
-X_no_z = dataset[cols_with_z].drop(columns=['redshift'])
-
-
-# 2. Run Detection
-outliers_z, scores_z, thresh_z = detect_outliers_gmm_iqr(X_with_z)
-outliers_no_z, scores_no_z, thresh_no_z = detect_outliers_gmm_iqr(X_no_z)
-
-print(f"Outliers detected (With Redshift): {np.sum(outliers_z)} / {len(X_with_z)} ({np.sum(outliers_z)/len(X_with_z):.2%})")
-print(f"Outliers detected (No Redshift):   {np.sum(outliers_no_z)} / {len(X_no_z)} ({np.sum(outliers_no_z)/len(X_no_z):.2%})")
-
-# 3. Visualization
-fig, axes = plt.subplots(2, 2, figsize=(18, 12))
-plt.suptitle("Outlier Detection Comparison: GMM + 1.5 IQR Rule", fontsize=16)
-
-# --- Top Row: Distribution of Log-Likelihood Scores ---
-# With Redshift
-sns.histplot(scores_z, bins=50, kde=True, ax=axes[0,0], color='skyblue')
-axes[0,0].axvline(thresh_z, color='red', linestyle='--', linewidth=2, label=f'Threshold: {thresh_z:.2f}')
-axes[0,0].set_title("Log-Likelihood Distribution (With Redshift)")
-axes[0,0].set_xlabel("Log-Likelihood (Density)")
-axes[0,0].legend()
-
-# Without Redshift
-sns.histplot(scores_no_z, bins=50, kde=True, ax=axes[0,1], color='orange')
-axes[0,1].axvline(thresh_no_z, color='red', linestyle='--', linewidth=2, label=f'Threshold: {thresh_no_z:.2f}')
-axes[0,1].set_title("Log-Likelihood Distribution (Without Redshift)")
-axes[0,1].set_xlabel("Log-Likelihood (Density)")
-axes[0,1].legend()
-
-# --- Bottom Row: PCA Projection of Outliers ---
-# Project to 2D for visualization
-# Note: transforming the SAME data (X_with_z) for both plots to ensure the 
-# dots are in the same visual "place", just colored differently.
-pca_vis = PCA(n_components=2, random_state=42)
-X_pca_vis = pca_vis.fit_transform(StandardScaler().fit_transform(X_with_z))
-
-# Plot With Redshift
-sns.scatterplot(x=X_pca_vis[:,0], y=X_pca_vis[:,1], hue=outliers_z, palette={False: 'gray', True: 'red'}, alpha=0.6, ax=axes[1,0])
-axes[1,0].set_title("Detected Outliers (Red) - With Redshift")
-axes[1,0].set_xlabel("PC1")
-axes[1,0].set_ylabel("PC2")
-
-# Plot Without Redshift
-sns.scatterplot(x=X_pca_vis[:,0], y=X_pca_vis[:,1], hue=outliers_no_z, palette={False: 'gray', True: 'red'}, alpha=0.6, ax=axes[1,1])
-axes[1,1].set_title("Detected Outliers (Red) - Without Redshift")
-axes[1,1].set_xlabel("PC1")
-axes[1,1].set_ylabel("PC2")
-
-plt.tight_layout()
-plt.show()
-
-# 4. Drop the outliers from the main dataset
-print(f"\n> Removing {np.sum(outliers_z)} outliers detected via GMM + 1.5IQR (With Redshift)...")
-
-# Apply mask (Length should now match perfectly)
-dataset = dataset[~outliers_z]
-
-# Reset index to maintain cleanliness for future splits
-dataset.reset_index(drop=True, inplace=True)
-
-print(f"> Outliers removed via GMM method... Final Shape: {dataset.shape}")
-
-
 # Feature correlation analysis
 print(f"\n\n> Feature correlation analysis")
 CM = drawCorrelationMatrix(dataset)
@@ -181,11 +150,11 @@ dataset['u_g'] = dataset['u'] - dataset['g']
 dataset['g_r'] = dataset['g'] - dataset['r']
 dataset['r_i'] = dataset['r'] - dataset['i']
 dataset['i_z'] = dataset['i'] - dataset['z']
-dataset = dataset.drop(columns=['u', 'g', 'i', 'z', 'redshift', 'alpha', 'delta'])
+dataset = dataset.drop(columns = ['u', 'g', 'i', 'z', 'redshift', 'alpha', 'delta'])
 for pair in pairs:
     toDrop = pair[1]
     if toDrop in dataset.columns:
-        dataset = dataset.drop(columns=[toDrop])
+        dataset = dataset.drop(columns = [toDrop])
         print(f"> Dropped feature: {toDrop}")
 print(f"\n\n> Optimized correlation matrix:\n{drawCorrelationMatrix(dataset).data}")
 
@@ -222,7 +191,7 @@ for n_neighbors in Ks:
 bestK = Ks[np.argmax(KNNcrossValidationScores)]
 
 # TODO: DELETE THIS
-bestK = 15
+#bestK = 15
 
 # Retrain with that K to show graphs related to this iteration
 print(f"\n> Best k value for KNN found to be {bestK} with F1-score = {max(KNNcrossValidationScores):.4f}: Retraining KNN with best k to show related graphs and metrics")
@@ -253,7 +222,7 @@ for n_estimators in estimators:
 bestEstimator = estimators[np.argmax(RFcrossValidationScores)]
 
 # TODO: DELETE THIS 
-bestEstimator = 96
+#bestEstimator = 96
 
 print(f"\n> Best validation F1-score: {max(RFcrossValidationScores):.4f} achieved at n_estimators = {bestEstimator}... Retrain RFC with best n_estimators to show related graphs")
 bestRFCPipeline = make_pipeline(StandardScaler(), RandomForestClassifier(n_estimators = bestEstimator, random_state = randomState))
@@ -275,7 +244,7 @@ sampleIndex = np.random.choice(X_train.index, size=int(len(X_train) * 0.1), repl
 Xsplit = X_train.loc[sampleIndex]
 ysplit = y_train.loc[sampleIndex]
 print(f"\n> Tuning SVM on subset of {len(Xsplit)} rows...")
-
+ 
 Cs = [0.001, 0.01, 0.1, 1, 10, 100]
 kernels = ['rbf', 'linear', 'sigmoid']
 kernelResults = {}
