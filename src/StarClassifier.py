@@ -93,6 +93,75 @@ dataset['class'] = LE.fit_transform(dataset['class'])
 print(dataset.head())
 
 
+print("\n\n> Outlier Detection: GMM + 1.5 IQR Rule (With vs Without Redshift)")
+# Version with Redshift
+cols_with_z = ['u', 'g', 'r', 'i', 'z', 'redshift']
+X_with_z = dataset[cols_with_z]
+
+# Version 2: Without Redshift
+X_no_z = dataset[cols_with_z].drop(columns=['redshift'])
+
+
+# 2. Run Detection
+outliers_z, scores_z, thresh_z = detect_outliers_gmm_iqr(X_with_z)
+outliers_no_z, scores_no_z, thresh_no_z = detect_outliers_gmm_iqr(X_no_z)
+
+print(f"Outliers detected (With Redshift): {np.sum(outliers_z)} / {len(X_with_z)} ({np.sum(outliers_z)/len(X_with_z):.2%})")
+print(f"Outliers detected (No Redshift):   {np.sum(outliers_no_z)} / {len(X_no_z)} ({np.sum(outliers_no_z)/len(X_no_z):.2%})")
+
+# 3. Visualization
+fig, axes = plt.subplots(2, 2, figsize=(18, 12))
+plt.suptitle("Outlier Detection Comparison: GMM + 1.5 IQR Rule", fontsize=16)
+
+# --- Top Row: Distribution of Log-Likelihood Scores ---
+# With Redshift
+sns.histplot(scores_z, bins=50, kde=True, ax=axes[0,0], color='skyblue')
+axes[0,0].axvline(thresh_z, color='red', linestyle='--', linewidth=2, label=f'Threshold: {thresh_z:.2f}')
+axes[0,0].set_title("Log-Likelihood Distribution (With Redshift)")
+axes[0,0].set_xlabel("Log-Likelihood (Density)")
+axes[0,0].legend()
+
+# Without Redshift
+sns.histplot(scores_no_z, bins=50, kde=True, ax=axes[0,1], color='orange')
+axes[0,1].axvline(thresh_no_z, color='red', linestyle='--', linewidth=2, label=f'Threshold: {thresh_no_z:.2f}')
+axes[0,1].set_title("Log-Likelihood Distribution (Without Redshift)")
+axes[0,1].set_xlabel("Log-Likelihood (Density)")
+axes[0,1].legend()
+
+# --- Bottom Row: PCA Projection of Outliers ---
+# Project to 2D for visualization
+# Note: transforming the SAME data (X_with_z) for both plots to ensure the 
+# dots are in the same visual "place", just colored differently.
+pca_vis = PCA(n_components=2, random_state=42)
+X_pca_vis = pca_vis.fit_transform(StandardScaler().fit_transform(X_with_z))
+
+# Plot With Redshift
+sns.scatterplot(x=X_pca_vis[:,0], y=X_pca_vis[:,1], hue=outliers_z, palette={False: 'gray', True: 'red'}, alpha=0.6, ax=axes[1,0])
+axes[1,0].set_title("Detected Outliers (Red) - With Redshift")
+axes[1,0].set_xlabel("PC1")
+axes[1,0].set_ylabel("PC2")
+
+# Plot Without Redshift
+sns.scatterplot(x=X_pca_vis[:,0], y=X_pca_vis[:,1], hue=outliers_no_z, palette={False: 'gray', True: 'red'}, alpha=0.6, ax=axes[1,1])
+axes[1,1].set_title("Detected Outliers (Red) - Without Redshift")
+axes[1,1].set_xlabel("PC1")
+axes[1,1].set_ylabel("PC2")
+
+plt.tight_layout()
+plt.show()
+
+# 4. Drop the outliers from the main dataset
+print(f"\n> Removing {np.sum(outliers_z)} outliers detected via GMM + 1.5IQR (With Redshift)...")
+
+# Apply mask (Length should now match perfectly)
+dataset = dataset[~outliers_z]
+
+# Reset index to maintain cleanliness for future splits
+dataset.reset_index(drop=True, inplace=True)
+
+print(f"> Outliers removed via GMM method... Final Shape: {dataset.shape}")
+
+
 # Feature correlation analysis
 print(f"\n\n> Feature correlation analysis")
 CM = drawCorrelationMatrix(dataset)
