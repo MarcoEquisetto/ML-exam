@@ -113,7 +113,7 @@ To prepare the data for training, the following steps were taken:
     \item \textbf{Interquartile Range (IQR):} A rule that statistically defines a "reasonable" range in which data points could fall, anything out of which is considered an outlier. In this case, the line was traced based on a 1.5IQR rule and only the data above such threshold was considered valid and kept.
     \item \textbf{Gaussian Mixture Model (GMM):} Applying a simple instance of GMM to initial data can show outliers as points which have a very low percentage probability to belong to any and all of the classes that are present, indicating that they are very likely outliers.
 \end{itemize}
-These techniques were combined and applied one after the other, in sequence, to produce the following outlier detection result:
+These techniques were combined and applied to produce the following outlier detection result:
 \begin{figure}[H]
     \centering
     \includegraphics[width=1\textwidth]{Figure_10.png}
@@ -256,9 +256,11 @@ Below is the confusion matrix of RFC with $n\_estimators = 96$:
 
 
 \subsubsection{Support Vector Machines}
-SVM is a powerful algorithm that finds the optimal hyperplane (boundary) that best separates different classes in an N-dimensional space. It aims to maximize the margin, that is the distance between the hyperplane and the nearest data points from each class.
-
-Initially, all kernel instances were tested, namely $['linear', 'rbf', 'sigmoid']$, only omitting $'precomputed'$ as it requires a specific size of matrix, each with hyperparameter C ranging in $[0.001, 0.01, 0.1, 1, 10, 100]$. Here is a plot that shows the performance of each kernel:
+SVM is a powerful algorithm that finds the optimal hyperplane (boundary) that best separates different classes in an N-dimensional 
+space. It aims to maximize the margin, that is the distance between the hyperplane and the nearest data points from each class.
+Due to the high computational cost of training SVMs on large datasets, hyperparameter tuning was performed on a random 10\% subset of the training data.
+All kernel instances were tested on this subset, namely $['linear', 'rbf', 'sigmoid']$, each with hyperparameter C ranging in $[0.001, 0.01, 0.1, 1, 10, 100]$.
+The best performing configuration found on the subset was then used to retrain the model on the full training dataset.
 
 \begin{figure}[H]
     \centering
