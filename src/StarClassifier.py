@@ -27,8 +27,8 @@ from helperFuncs import drawCorrelationMatrix, plotKernelPerformanceComparison, 
 randomState = 42
 
 # Hyperparameters max ranges
-maxK = 1
-maxEstimators = 1
+maxK = 100
+maxEstimators = 100
 
 # Import the Dataset and print its shape
 dataset = pd.read_csv('./dataset/star_classification.csv')
@@ -190,8 +190,6 @@ for n_neighbors in Ks:
 # Extrapolate best K
 bestK = Ks[np.argmax(KNNcrossValidationScores)]
 
-# TODO: DELETE THIS
-#bestK = 15
 
 # Retrain with that K to show graphs related to this iteration
 print(f"\n> Best k value for KNN found to be {bestK} with F1-score = {max(KNNcrossValidationScores):.4f}: Retraining KNN with best k to show related graphs and metrics")
@@ -221,8 +219,6 @@ for n_estimators in estimators:
 # Extrapolate best n_estimators
 bestEstimator = estimators[np.argmax(RFcrossValidationScores)]
 
-# TODO: DELETE THIS 
-#bestEstimator = 96
 
 print(f"\n> Best validation F1-score: {max(RFcrossValidationScores):.4f} achieved at n_estimators = {bestEstimator}... Retrain RFC with best n_estimators to show related graphs")
 bestRFCPipeline = make_pipeline(StandardScaler(), RandomForestClassifier(n_estimators = bestEstimator, random_state = randomState))
@@ -238,7 +234,6 @@ print(f"Recall: {recall_score(y_test, predVal, average = 'macro'):.4f}")
 
 
 
-'''
 # SVM training
 sampleIndex = np.random.choice(X_train.index, size=int(len(X_train) * 0.1), replace = False)
 Xsplit = X_train.loc[sampleIndex]
@@ -290,7 +285,7 @@ print(f"Accuracy: {accuracy_score(y_test, predVal):.4f}")
 print(f"Precision: {precision_score(y_test, predVal, average = 'macro'):.4f}")
 print(f"Recall: {recall_score(y_test, predVal, average = 'macro'):.4f}")
 
-'''
+
 
 # Logistic Regression training
 LR_Cs = [0.001, 0.01, 0.1, 1, 10, 100]

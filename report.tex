@@ -199,7 +199,7 @@ During development, problems arose, prompting solutions that would tackle and tr
  Introducing synthetic features meant models now had compound attributes with real-world meaning they could use during training and evaluation.
 
  \subsubsection{Pipeline Training}
-Initially, data was scaled once after preprocessing and then given to all models. Mistakenly, it was not taken into account that when \textbf{cross\_val\_score} splits \textbf{X\_train} into internal folds, the validation fold has already influenced the scaler (mean/variance) used on the training fold. This "peeking" can lead to overly optimistic scores.\\By adding a pipeline in training loops, this mistake was easily fixed and data leakage was prevented by scaling the entire training set before the cross-validation loop.
+Initially, data was scaled once after preprocessing and then given to all models. Mistakenly, it was not taken into account that when \textbf{cross\_val\_score} splits \textbf{X\_train} into internal folds, the validation fold has already influenced the scaler (mean/variance) used on the training fold. This "peeking" can lead to overly optimistic scores.\\By adding a pipeline in training loops, this mistake was easily fixed and data leakage was prevented by scaling the entire training set before the cross-validation loop.\\It is to note that this observation solely refers to the Supervised Learning phase.
 
 
 \subsection{Supervised Learning Performance- Hyperparameter Tuning and Evaluation}
@@ -327,7 +327,7 @@ From the analysis that was conducted, out of all the models that were trained an
         \textbf{KNN ($k=37$)} & \textbf{0.8736} & \textbf{0.8482} & \textbf{0.8312} & \textbf{0.8341} \\
         Random Forest ($n\_e = 96$) & 0.8696 & 0.8428 & 0.8260 & 0.8306 \\
         SVM (Rbf, $C = 100$) & 0.8653 & 0.8427 & 0.8162 & 0.8129 \\
-        Logistic Regression ($C = 10$) & 0.6185 & 0.7416 & 0.6595 & 0.6185 \\
+        Logistic Regression ($C = 10$) & 0.7416 & 0.6595 & 0.6350 & 0.6185 \\
         \bottomrule
     \end{tabular}
     \label{tab:results}
@@ -373,10 +373,9 @@ However, quantitative metrics reveal that this spatial clarity did not translate
 \label{sec:conclusions}
 % Requirements: Summarize goals, results, failure cases, future works [cite: 62-63]
 
-In this project, we successfully implemented a multi-model approach to star classification. The Random Forest model proved to be the most robust, likely due to its ability to handle non-linear relationships in spectral data. The clustering analysis highlighted that while unsupervised methods can find structure, they struggle to perfectly align with the semantic classes (Star, Galaxy, QSO) without label guidance.
+In this project, we successfully implemented a multi-model approach to star classification. The KNearestN eighbors model proved to be the most robust. The clustering analysis highlighted that while unsupervised methods can find structure, they struggle to perfectly align with the semantic classes (Star, Galaxy, QSO) without label guidance.
 
 Future work could involve implementing Deep Learning approaches to further improve accuracy and reliability of the classification of cosmic bodies.
-
 
 \begin{thebibliography}{9}
 \label{sec:refs}
