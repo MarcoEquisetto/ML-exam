@@ -27,8 +27,8 @@ from helperFuncs import drawCorrelationMatrix, plotKernelPerformanceComparison, 
 randomState = 42
 
 # Hyperparameters max ranges
-maxK = 100
-maxEstimators = 100
+maxK = 1
+maxEstimators = 1
 
 # Import the Dataset and print its shape
 dataset = pd.read_csv('./dataset/star_classification.csv')
@@ -238,7 +238,7 @@ print(f"Recall: {recall_score(y_test, predVal, average = 'macro'):.4f}")
 
 
 
-
+'''
 # SVM training
 sampleIndex = np.random.choice(X_train.index, size=int(len(X_train) * 0.1), replace = False)
 Xsplit = X_train.loc[sampleIndex]
@@ -290,7 +290,7 @@ print(f"Accuracy: {accuracy_score(y_test, predVal):.4f}")
 print(f"Precision: {precision_score(y_test, predVal, average = 'macro'):.4f}")
 print(f"Recall: {recall_score(y_test, predVal, average = 'macro'):.4f}")
 
-
+'''
 
 # Logistic Regression training
 LR_Cs = [0.001, 0.01, 0.1, 1, 10, 100]
@@ -298,7 +298,7 @@ LRcrossValidationScores = []
 
 print(f"\n\n> Logistic Regression training: evaluate LRs with C ranging inside {LR_Cs} using 5-Fold Cross Validation and F1-score (macro) as metrics")
 for C in LR_Cs:
-    LRPipeline = make_pipeline(StandardScaler(), LogisticRegression(C = C, random_state = randomState))
+    LRPipeline = make_pipeline(StandardScaler(), LogisticRegression(C = C, random_state = randomState, max_iter = 1000))
     scores = cross_val_score(LRPipeline, X_train, y_train, cv = 5, scoring = 'f1_macro')
     LRcrossValidationScores.append(scores.mean())
     print(f"> C = {C}, F1-score (mean of batch) = {scores.mean():.4f}")
@@ -308,10 +308,11 @@ bestLR_C = LR_Cs[np.argmax(LRcrossValidationScores)]
 
 print(f"\n> Best validation F1-score: {max(LRcrossValidationScores):.4f} achieved at C = {bestLR_C}... Retrain Logistic Regression with best C to show related graphs")
 
-bestLRPipeline = make_pipeline(StandardScaler(), LogisticRegression(C = bestLR_C, random_state = randomState))
+bestLRPipeline = make_pipeline(StandardScaler(), LogisticRegression(C = bestLR_C, random_state = randomState, max_iter = 1000))
 bestLRPipeline.fit(X_train, y_train)
 predVal = bestLRPipeline.predict(X_test)
 plotLogQualityCheckGraph(LRcrossValidationScores, LR_Cs, bestLR_C, max(LRcrossValidationScores), "Logistic Regression")
+displayConfusionMatrix(y_test, predVal, f"Best Logistic Regression (C = {bestLR_C})")
 
 print(f"Accuracy: {accuracy_score(y_test, predVal):.4f}")
 print(f"Precision: {precision_score(y_test, predVal, average = 'macro'):.4f}")

@@ -90,7 +90,7 @@ The primary objective of this project is to develop a robust machine learning pi
 
 \section{Methodology}
 \label{sec:methodology}
-All experiments were conducted using Python, utilizing the \texttt{scikit-learn}, \texttt{pandas}, and \texttt{seaborn} libraries specifically, combined with performance metric libraries. The single trainings of the various methods were developed separately and then brought together in one single train cycle, to uniform all of them and put all models in the same starting conditions, distribution and random seed generation.
+All experiments were conducted using Python, mainly utilizing the \texttt{scikit-learn}, \texttt{pandas}, and \texttt{seaborn} libraries specifically, combined with other performance metric libraries. The single trainings of the various methods were developed separately and then brought together in one single train cycle, to uniform all of them and put all models in the same starting conditions, distribution and random seed generation.
 
 
 \subsection{Dataset Description}
@@ -164,7 +164,7 @@ The following supervised models were implemented using 5-Fold Cross-Validation:
 \begin{itemize}
     \item \textbf{K-Nearest Neighbors (KNN):} Tuned for $k \in [1, 100]$.
     \item \textbf{Random Forest Classifier (RFC):} An ensemble method, tuned for $n\_estimators \in [1, 100]$.
-    \item \textbf{Support Vector Machine (SVM):} Using the RBF kernel, tuned for regularization parameter $C \in [0.001, 0.01, 0.1, 1, 10, 100]$.
+    \item \textbf{Support Vector Machine (SVM):} Using the kernel modes ranging inside $kernel \in ['rbf', 'linear', 'sigmoid']$, tuned for regularization parameter $C \in [0.001, 0.01, 0.1, 1, 10, 100]$.
     \item \textbf{Logistic Regression:} Tuned for $C \in [0.001, 0.01, 0.1, 1, 10, 100]$.
 \end{itemize}
 
@@ -199,11 +199,11 @@ During development, problems arose, prompting solutions that would tackle and tr
  Introducing synthetic features meant models now had compound attributes with real-world meaning they could use during training and evaluation.
 
  \subsubsection{Pipeline Training}
-Initially, data was scaled once after preprocessing and then given to all models. Mistakenly, I did not account for the fact that when \textbf{cross\_val\_score} splits \textbf{X\_train} into internal folds, the validation fold has already influenced the scaler (mean/variance) used on the training fold. This "peeking" can lead to overly optimistic scores.\\By adding a pipeline in training loops, this mistake was easily fixed and data leakage was prevented by scaling the entire training set before the cross-validation loop.
+Initially, data was scaled once after preprocessing and then given to all models. Mistakenly, it was not taken into account that when \textbf{cross\_val\_score} splits \textbf{X\_train} into internal folds, the validation fold has already influenced the scaler (mean/variance) used on the training fold. This "peeking" can lead to overly optimistic scores.\\By adding a pipeline in training loops, this mistake was easily fixed and data leakage was prevented by scaling the entire training set before the cross-validation loop.
 
 
 \subsection{Supervised Learning Performance- Hyperparameter Tuning and Evaluation}
-Cross-validation was used to find the optimal hyperparameters by training loops: each model was given an incrementally higher hyperparameter to work on the same dataset as all its predecessors. This way it was possible to investigate performance based soley on hyperparameter and not on change of data. Every model will be discussed separately.
+Cross-validation was used to find the optimal hyperparameters by training loops: each classification model was given an incrementally higher hyperparameter to work on the same dataset as all its predecessors. This way it was possible to investigate performance based solely on hyperparameter and not on change of data. Every model will be discussed separately.
 
 \subsubsection{KNearestNeighbour Classifier}
 KNN is a simple, instance-based algorithm that classifies a new data point by looking at the majority class of its 'k' closest neighbors in the feature space. It relies on the assumption that similar data points exist in close proximity to each other.
@@ -211,7 +211,7 @@ KNN is a simple, instance-based algorithm that classifies a new data point by lo
 \begin{figure}[H]
     \centering
     \includegraphics[width=1\textwidth]{Figure_4.png}
-    \caption{\textbf{K in KNN}: Graph shows how performance (F1-score) grows util a highpoint at $BestK = 37$, where it starts decreasing. In this case, there is a clear winner as for best hyperparameter value.}
+    \caption{\textbf{K in KNN}: Graph shows how performance (F1-score) grows to a highpoint at $BestK = 37$, where it starts decreasing. In this case, there is a clear winner as for best hyperparameter value.}
     \label{fig:correlationMatrix2}
 \end{figure}
 Having obtained the best value for K, a new KNN model was trained specifically with this hyperparameter value to show evaluation metrics on the best version of KNN obtainable on this dataset. These were the obtained results:
@@ -221,7 +221,7 @@ Having obtained the best value for K, a new KNN model was trained specifically w
     \item Precision: 0.8482
     \item Recall: 0.8312
 \end{itemize}
-Below is the confusion matrix of KNN with $n\_neighbors = 15$:
+Below is the confusion matrix of KNN with $n\_neighbors = 37$:
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.7\textwidth]{Figure_6.png}
@@ -239,7 +239,7 @@ RFC is an ensemble learning method that builds multiple decision trees during tr
     \caption{\textbf{n\_neighbours in RFC}: Graph shows how performance (F1-score) grows.}
     \label{fig:correlationMatrix2}
 \end{figure}
-In this case, there seems to be an asyntotic behavior: even though the score increases, it does so ever so slowly, while training time and load increases with an inverse proportion. Taking both information into account, $n\_estimators = 96$ is assumed to be the best hyperparameter without continuing training loop. With this hyperparameter, a new training of RFC is made, which produces the following evaluation metrics:
+In this case, there seems to be an asymptotic behavior: even though F1-Score increases, it does so ever so slowly, while training time and load increases with an inverse proportion. Taking both information into account, $n\_estimators = 96$ is assumed to be the best hyperparameter without continuing training loop, as doing so would produce a minute upgrade in performance at great cost of GPU strain and training time. With this hyperparameter value, a new training of RFC is issued, which produces the following evaluation metrics:
 \begin{itemize}
     \item F1-Score: 0.8306
     \item Accuracy: 0.8696
@@ -258,7 +258,7 @@ Below is the confusion matrix of RFC with $n\_estimators = 96$:
 \subsubsection{Support Vector Machines}
 SVM is a powerful algorithm that finds the optimal hyperplane (boundary) that best separates different classes in an N-dimensional space. It aims to maximize the margin, that is the distance between the hyperplane and the nearest data points from each class.
 
-Initially, all kernel instances were tested, namely $['linear', 'poly', 'rbf', 'sigmoid']$, only omitting $'precomputed'$ as it requires a specific size of matrix, each with hyperparameter C ranging in $[0.001, 0.01, 0.1, 1, 10, 100]$. Here is a plot that shows the performance of each kernel:
+Initially, all kernel instances were tested, namely $['linear', 'rbf', 'sigmoid']$, only omitting $'precomputed'$ as it requires a specific size of matrix, each with hyperparameter C ranging in $[0.001, 0.01, 0.1, 1, 10, 100]$. Here is a plot that shows the performance of each kernel:
 
 \begin{figure}[H]
     \centering
@@ -283,6 +283,34 @@ Below is the confusion matrix of SVM with $kernel=rbf, C=100$:
 \end{figure}
 
 
+\subsubsection{Logistic Regression}
+Logistic Regression is a supervised learning algorithm that applies the $'sigmoid'$ (logistic) function to a linear combination of features, mapping the output to a probability between 0 and 1: it makes predictions based on these probabilities, typically using a threshold to assign data points to specific categories. It is highly sensitive to feature scaling, which is why a StandardScaler was included within its training pipeline.
+
+The decision to include this model was driven by its efficiency on large datasets and its feature interpretability, being able to indicate which color magnitudes or synthetic features are the most significant predictors for a specific type of celestial object through its coefficients.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{Figure_11.png}
+    \caption{\textbf{Performance of LR}: Graph shows a comparison cycling through the $C$ values. The highest F1-Score was obtained with $C=10$.}
+    \label{fig:performanceMatrixLR}
+\end{figure}
+Even though Logistic Regression was promising "on paper", it ended up performing well below the average of its competitors, as data is not linearly separable and it struggles to capture complex, non-linear relationships between astronomical features. On top of that, despite the initial outlier removal, Logistic Regression remains more sensitive to extreme values or noise in the spectral data than a robust ensemble method like Random Forest.
+
+Here are the exaluation metrics relative to the best Logistic Regression instance that was retrained, that is the one with $C=10$:
+
+\begin{itemize}
+    \item F1-Score: 0.6185
+    \item Accuracy: 0.7416
+    \item Precision: 0.6595
+    \item Recall: 0.6350
+\end{itemize}
+Below is the confusion matrix of the Linear Regression model with $C=10$:
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{Figure_13.png}
+    \caption{\textbf{Confusion Matrix}: This matrix shows how good the LR model was at categorizing objects.}
+    \label{fig:confusionMatrixLR}
+\end{figure}
 
 
 
@@ -299,8 +327,7 @@ From the analysis that was conducted, out of all the models that were trained an
         \textbf{KNN ($k=37$)} & \textbf{0.8736} & \textbf{0.8482} & \textbf{0.8312} & \textbf{0.8341} \\
         Random Forest ($n\_e = 96$) & 0.8696 & 0.8428 & 0.8260 & 0.8306 \\
         SVM (Rbf, $C = 100$) & 0.8653 & 0.8427 & 0.8162 & 0.8129 \\
-        SVM (Linear, $C = 10$) & 0.00 & 0.00 & 0.00 & 0.7125 \\
-        Logistic Regression ($C = 10$) & 0.7416 & 0.6595 & 0.6350 & 0.6185 \\
+        Logistic Regression ($C = 10$) & 0.6185 & 0.7416 & 0.6595 & 0.6185 \\
         \bottomrule
     \end{tabular}
     \label{tab:results}
@@ -308,18 +335,38 @@ From the analysis that was conducted, out of all the models that were trained an
 
 
 \subsection{Clustering Analysis}
-We compared clustering performance on raw scaled data versus PCA-reduced data.
+Clustering performance was evaluated by comparing models trained on high-dimensional scaled data against those trained on a two-dimensional PCA projection. This comparison highlights a significant trade-off: while dimensionality reduction simplifies the feature space, it does not inherently make the data more "clusterable" in a way that aligns with biological or physical ground truth.
 
-% CODE SNIPPET EXAMPLE
-\begin{lstlisting}[caption=Clustering Implementation Snippet, label=lst:clustering]
-# KMeans Clustering on PCA Data
-KmeansPCA = KMeans(n_clusters=3, random_state=randomState)
-PCA_Kmeans = KmeansPCA.fit_predict(X_PCA)
-\end{lstlisting}
+\begin{figure}[H] 
+    \centering \includegraphics[width=0.8\textwidth]{Figure_12.png} 
+    \caption{\textbf{Clustering Visualization}: Comparison between KMeans and GMM trained on raw scaled features (left) versus PCA-reduced features (right). The PCA projection visually collapses the variance into distinct regions, though significant overlap remains.} 
+    \label{fig:clusteringPerformance} 
+\end{figure}
 
-As shown in Figure \ref{fig:clustering}, PCA significantly improved the separability of the clusters.
+\begin{table}[H]
+    \centering
+    \caption{Raw vs PCA Clusteing: comparison of KMeans and GMM}
+    \begin{tabular}{lcccc}
+        \toprule
+        \textbf{Model} & \textbf{ARI} & \textbf{NMI} & \textbf{Silhouette} \\
+        \midrule
+        KMeans (raw) & 0.1068 & 0.1904 & 0.3558 \\
+        KMeans (PCA) & 0.1129 & 0.1919 & 0.4322 \\
+        GMM (raw) & 0.0990 & 0.1466 & 0.1565 \\
+        GMM (PCA) & 0.0652 & 0.1302 & 0.3862 \\
+        \bottomrule
+    \end{tabular}
+    \label{tab:results}
+\end{table}
 
-Quantitative metrics (ARI, NMI, Silhouette) indicated that... \textit{[Insert analysis from printClusterMetrics output]}.
+As illustrated in Figure [\ref{fig:clusteringPerformance}], PCA significantly improved the Silhouette Score for both models, increasing from $0.3558$ to $0.4322$ for KMeans and from a poor $0.1565$ to $0.3862$ for GMM. This indicates that PCA successfully filtered out noise, creating more defined and separable spatial groupings.
+
+However, quantitative metrics reveal that this spatial clarity did not translate to meaningful classification: 
+\begin{itemize} 
+    \item \textbf{Weak Ground-Truth Alignment}: The Adjusted Rand Index (ARI) remained extremely low across all configurations, peaking at only $0.1129$ for KMeans on PCA data. This suggests that the natural clusters formed by the algorithms have very little overlap with the actual \textit{GALAXY, STAR,} and \textit{QSO} labels. 
+    \item \textbf{Information Loss in GMM}: Interestingly, while GMM's Silhouette score improved with PCA, its ARI actually dropped from $0.0990$ to $0.0652$. This indicates that the Gaussian components in the reduced 2D space lost critical density information present in the original feature set. 
+    \item \textbf{Conclusion on Viability}: With Normalized Mutual Info (NMI) values hovering below $0.20$, these features, even when optimized via PCA, are insufficient for unsupervised discovery of star classes. The data appears to exist on a continuum rather than in discrete, well-separated density clusters. 
+\end{itemize}
 
 
 \section{Conclusions}
