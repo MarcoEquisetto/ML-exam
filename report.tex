@@ -380,13 +380,32 @@ However, quantitative metrics reveal that this spatial clarity did not translate
 \end{itemize}
 
 
-\section{Conclusions}
+\section{Conclusion}
 \label{sec:conclusions}
-% Requirements: Summarize goals, results, failure cases, future works [cite: 62-63]
 
-In this project, we successfully implemented a multi-model approach to star classification. The KNearestN eighbors model proved to be the most robust. The clustering analysis highlighted that while unsupervised methods can find structure, they struggle to perfectly align with the semantic classes (Star, Galaxy, QSO) without label guidance.
+This project set out to evaluate the performance of supervised and unsupervised machine learning models on the task of celestial object classification. A critical component of this study was the deliberate exclusion of the \textit{redshift} feature, forcing the models to rely solely on photometric color indices and reference magnitudes.
 
-Future work could involve implementing Deep Learning approaches to further improve accuracy and reliability of the classification of cosmic bodies.
+\subsection{Supervised Learning Synthesis}
+The results demonstrate that while \textit{redshift} is the strongest predictor for cosmological classification, it is not strictly necessary for achieving reasonable accuracy. 
+\begin{itemize}
+    \item \textbf{Non-Linearity is Key:} The \textbf{K-Nearest Neighbors (KNN)} classifier ($F1=0.8341$) and \textbf{Random Forest} ($F1=0.8306$) outperformed the linear models. This confirms that the decision boundaries between Stars, Galaxies, and Quasars in color space ($u-g$, $g-r$, etc.) are highly non-linear and complex.
+    \item \textbf{The Failure of Linear Models:} \textbf{Logistic Regression} performed significantly worse ($F1=0.6185$), proving that celestial classes cannot be separated by simple hyperplanes when limited to photometric data.
+    \item \textbf{Robustness:} KNN proved to be the most efficient balance of training time and accuracy, likely because the density of similar stellar objects in color space is high, favoring instance-based learning.
+\end{itemize}
+
+\subsection{Unsupervised Learning Insights}
+The clustering analysis provided a crucial negative result. Despite the application of PCA to reduce noise, neither \textbf{KMeans} nor \textbf{GMM} successfully reconstructed the true semantic classes (ARI $< 0.12$). 
+This suggests that in the photometric feature space, Stars, Galaxies, and Quasars do not form distinct, separated "blobs." Instead, they likely exist on a continuous manifold (the stellar locus) where classes overlap significantly. This finding underscores the necessity of labeled data (Supervised Learning) for this specific astronomical task.
+
+\subsection{Future Outlook}
+While the removal of redshift provided a challenging testbed for these algorithms, modern astronomical surveys often require higher precision. Future iterations of this work could explore:
+\begin{enumerate}
+    \item \textbf{Hierarchical Classification:} Separating Stars from Extragalactic objects first, then classifying Galaxies vs. Quasars.
+    \item \textbf{Deep Learning on Raw Spectra:} Utilizing 1D Convolutional Neural Networks (CNNs) on the raw spectral data rather than extracted tabular features to capture absorption lines invisible to standard photometry.
+\end{enumerate}
+
+In conclusion, while "blind" photometric classification is viable using non-linear ensemble or instance-based methods, the intrinsic topology of the data prevents simple linear separation or unsupervised clustering from achieving high-fidelity results.
+
 
 \begin{thebibliography}{9}
 \label{sec:refs}
@@ -399,6 +418,15 @@ Pedregosa, F., et al., "Scikit-learn: Machine Learning in Python," \textit{Journ
 
 \bibitem{lectures}
 Beyan, C., "Machine Learning Course Slides," University of Verona, A.Y. 2025/2026.
+
+\bibitem{geron}
+G{\'e}ron, A., "Hands-On Machine Learning with Scikit-Learn, Keras, and TensorFlow," \textit{O'Reilly Media}, 2019.
+
+\bibitem{sdss_paper}
+York, D. G., et al., "The Sloan Digital Sky Survey: Technical Summary," \textit{The Astronomical Journal}, 2000.
+
+\bibitem{vanderplas}
+VanderPlas, J., "Python Data Science Handbook: Essential Tools for Working with Data," \textit{O'Reilly Media}, 2016.
 
 \end{thebibliography}
 
