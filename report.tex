@@ -40,7 +40,8 @@
 }
 
 \title{\textbf{Star Classification and Clustering: A Comparative Analysis} \\
-       \large Machine Learning Project, Academic Year 2025/2026 \\
+       \large Machine Learning 
+Project, Academic Year 2025/2026 \\
        }
 \author{Marco Equisetto\\VR535007}
 \date{\today}
@@ -51,9 +52,10 @@
 
 \begin{abstract}
 \noindent
-This report presents a comprehensive analysis of the Star Classification dataset, with the aim of comparing the performance of multiple supervised and unsupervised models. The study investigates how data preprocessing heavily impacts model outcomes and explores how different techniques can be combined to leverage their respective strengths.\\Four distinct supervised learning models are evaluated: \textbf{K-Nearest Neighbors (KNN)}, \textbf{Random Forest}, \textbf{Support Vector Machines (SVM)}, and \textbf{Logistic Regression}. 
- Additionally, unsupervised learning techniques, specifically \textbf{K-Means} and \textbf{Gaussian Mixture Models (GMM)}, are employed to explore the intrinsic topological nature of the astronomical data. 
- Model performance is primarily evaluated using the \textbf{F1-score}, with the addition of \textbf{accuracy}, \textbf{precision} and \textbf{recall} for classification tasks, while \textbf{Adjusted Rand Index (ARI)}, \textbf{Normalized Mutual Info (NMI)} and \textbf{Silhouette Coefficient} are utilized for clustering validation. 
+This report presents a \textbf{comprehensive analysis} of the Star Classification dataset, with the aim of comparing the performance of multiple supervised and unsupervised models.
+The study investigates how data preprocessing \textit{heavily impacts} model outcomes and explores how different techniques can be combined to leverage their respective strengths.\\Four distinct supervised learning models are evaluated: \textbf{K-Nearest Neighbors (KNN)}, \textbf{Random Forest}, \textbf{Support Vector Machines (SVM)}, and \textbf{Logistic Regression}.
+Additionally, unsupervised learning techniques, specifically \textbf{K-Means} and \textbf{Gaussian Mixture Models (GMM)}, are employed to explore the \textit{intrinsic topological nature} of the astronomical data.
+Model performance is primarily evaluated using the \textbf{F1-score}, with the addition of \textbf{accuracy}, \textbf{precision} and \textbf{recall} for classification tasks, while \textbf{Adjusted Rand Index (ARI)}, \textbf{Normalized Mutual Info (NMI)} and \textbf{Silhouette Coefficient} are utilized for clustering validation.
 \end{abstract}
 
 \tableofcontents
@@ -61,44 +63,47 @@ This report presents a comprehensive analysis of the Star Classification dataset
 
 \section{Introduction}
 \label{sec:introduction}
-The classification of celestial objects is a fundamental task in modern astrophysics. With the advent of large-scale sky surveys, and the ever increasing amount of satellites and telescopes, the volume of spectral and photometric data has grown exponentially, creating the need to move from manual classification to machine learning and deep learning models.
+The classification of celestial objects is a \textbf{fundamental task} in modern astrophysics.
+With the advent of large-scale sky surveys, and the ever-increasing amount of satellites and telescopes, the volume of spectral and photometric data has grown exponentially, creating the need to move from manual classification to \textit{machine learning} and \textit{deep learning} models.
 Although machine learning models pale in comparison to deep learning ones in terms of ability to process high dimensionality and quantity data, they still offer a more than viable solution for rudimentary tasks such as the one tackled in this discussion.
-
 \section{Motivation and Rationale}
 \label{sec:motivation}
-This project addresses the problem of classifying objects from the Sloan Digital Sky Survey (SDSS) into three distinct classes: \textbf{Galaxies}, \textbf{Stars}, and \textbf{Quasars}. The rationale behind this work is to compare the efficacy of distance-based, ensemble, and linear models in handling astronomical data, which is often characterized by high dimensionality, considerable size and elevated noise.
+This project addresses the problem of classifying objects from the Sloan Digital Sky Survey (SDSS) into three distinct classes: \textbf{Galaxies}, \textbf{Stars}, and \textbf{Quasars}.
+The rationale behind this work is to compare the efficacy of \textit{distance-based}, \textit{ensemble}, and \textit{linear} models in handling astronomical data, which is often characterized by \textbf{high dimensionality}, considerable size and high levels of noise.
 Most models currently employed rely on classifying bodies by redshift and spectral indexes.
-This project turned such a task into one that relies solely on color and emitted light.
-
+This project turned such a task into one that relies \textbf{solely on color and emitted light}.
 \section{State of the Art}
 \label{sec:sota}
-Astronomical classification has traditionally relied on the \textit{Morgan-Keenan} (MK) method, where each star has a spectral class and a luminosity class assigned to it. It has evolved from manual inspection to automatic pipelines capable of processing and handling data of orders of magnitude that are incomparable to those historically analyzed by hand. Current state-of-the-art methods generally fall into two categories depending on the input data format: ensemble methods for tabular photometric data and Deep Learning architectures for raw spectral or time-series data.\\For datasets consisting of extracted features (magnitudes, colors, redshift), much like the dataset used in this project, Gradient Boosted Decision Trees (GBDTs) are currently considered the gold standard, which is one of the reasons why Random Forest Classifier (RFC) was considered as a viable choice and why it performed quite well in this task.
-
-While tabular data with few selected features is efficient, the highest level of accuracy is obtained through the use of "raw" data, these being mathematical data like \textit{1D-Spectra} (a combination of intensity and wavelength) or \textit{light curves} (brightness over time). Such data types are of complicated distributions and huge quantities, rendering them effectively impossible to handle by simple Machine Learning models, and therefore more suitable for Deep Learning models, such as Neural Networks.\\Despite all the technological advancements, the field of stellar classification still faces many hurdles, mainly:
+Astronomical classification has traditionally relied on the \textit{Morgan-Keenan} (MK) method, where each star has a spectral class and a luminosity class assigned to it.
+It has evolved from manual inspection to \textbf{automatic pipelines} capable of processing and handling data of orders of magnitude that are incomparable to those historically analyzed by hand.
+Current state-of-the-art methods generally fall into two categories depending on the input data format: \textit{ensemble methods} for tabular photometric data and \textit{Deep Learning architectures} for raw spectral or time-series data.\\For datasets consisting of extracted features (magnitudes, colors, redshift), much like the dataset used in this project, \textbf{Gradient Boosted Decision Trees (GBDTs)} are currently considered the \textit{gold standard}, which is one of the reasons why Random Forest Classifier (RFC) was considered as a viable choice and why it performed quite well in this task.
+While tabular data with few selected features is efficient, the highest level of accuracy is obtained through the use of "raw" data, these being mathematical data like \textit{1D-Spectra} (a combination of intensity and wavelength) or \textit{light curves} (brightness over time).
+Such data types are of complicated distributions and huge quantities, rendering them effectively impossible to handle by simple Machine Learning models, and therefore more suitable for Deep Learning models, such as Neural Networks.\\Despite all the technological advancements, the field of stellar classification still faces many hurdles, mainly:
 \begin{itemize}
     \item \textbf{Imbalance}: The nature of the universe renders some objects much rarer than others (e.g. highly redshifted Quasars) and therefore data about said objects can be extremely hard to obtain, making it difficult to train models with equal representation of all classes.
-    \item \textbf{Domain Shift}: Due to how much celestial object can vary both inside and outside classes, training a model on one dataset with labeled data from one survey and then applying it to another dataset might result in poor performance due to the presence of different level of noise profiles and instrument sensitivity, which is and always will be inevitable since data come from different measuring instruments.
+\item \textbf{Domain Shift}: Due to how much celestial objects can vary both inside and outside classes, training a model on one dataset with labeled data from one survey and then applying it to another dataset might result in poor performance due to the presence of different levels of noise profiles and instrument sensitivity, which is and always will be inevitable since data come from different measuring instruments.
 \end{itemize}
 
 \section{Objectives}
 \label{sec:objectives}
-The primary objective of this project is to develop a robust machine learning pipeline for celestial object classification and to find out which of the tested models best fits the task at hand. Specific objectives include:
+The \textbf{primary objective} of this project is to develop a \textit{robust machine learning pipeline} for celestial object classification and to find out which of the tested models best fits the task at hand.
+Specific objectives include:
 \begin{enumerate}
     \item \textbf{Data Preprocessing:} To implement effective outlier removal and feature engineering (calculating color indices like $u-g$) to improve model separability and to remove problematic noisy features such as position based features (namely $alpha$ and $delta$).
-    \item \textbf{Supervised Comparison:} To evaluate and tune hyperparameters for KNN, Random Forest, SVM, and Logistic Regression to find the best performing one for each of them.
-    \item \textbf{Unsupervised Exploration:} To analyze the dataset using Clustering (KMeans, GMM) and assess the impact of Principal Component Analysis (PCA) on clustering performance.
+\item \textbf{Supervised Comparison:} To evaluate and tune hyperparameters for KNN, Random Forest, SVM, and Logistic Regression to find the best performing one for each of them.
+\item \textbf{Unsupervised Exploration:} To analyze the dataset using Clustering (K-Means, GMM) and assess the impact of Principal Component Analysis (PCA) on clustering performance.
 \end{enumerate}
 
 
 \section{Methodology}
 \label{sec:methodology}
-All experiments were conducted using Python, mainly utilizing the \texttt{scikit-learn}, \texttt{pandas}, and \texttt{seaborn} libraries specifically, combined with other performance metric libraries. The single trainings of the various methods were developed separately and then brought together in one single train cycle, to uniform all of them and put all models in the same starting conditions, distribution and random seed generation.
-
+All experiments were conducted using Python, mainly utilizing the \texttt{scikit-learn}, \texttt{pandas}, and \texttt{seaborn} libraries specifically, combined with other performance metric libraries.
+The single trainings of the various methods were developed separately and then brought together in one single train cycle, to \textbf{standardize} all of them and put all models in the same starting conditions, distribution and random seed generation.
 \subsection{Dataset Description}
-The dataset of choice is the \textit{Star Classification} dataset (sourced from Kaggle/SDSS). It initially contains $100,000$ observations. 
+The dataset of choice is the \textit{Star Classification} dataset (sourced from Kaggle/SDSS). It initially contains $100,000$ observations.
 \begin{itemize}
     \item \textbf{Original Features:} Spectral columns ($u, g, r, i, z$), redshift, various IDs, and spatial coordinates, namely $alpha$ and $delta$.
-    \item \textbf{Target Class:} A categorical variable with three levels: \texttt{GALAXY}, \texttt{STAR}, \texttt{QSO}.
+\item \textbf{Target Class:} A categorical variable with three levels: \texttt{GALAXY}, \texttt{STAR}, \texttt{QSO}.
 \end{itemize}
 
 
@@ -106,34 +111,38 @@ The dataset of choice is the \textit{Star Classification} dataset (sourced from 
 To prepare the data for training, the following steps were taken:
 
 \subsubsection{Cleaning}
-The ID columns were dropped since they do not provide real information and would very likely introduce biases or noise if kept.
-
+The ID columns were dropped since they do not provide real information and would very likely introduce \textit{biases} or \textit{noise} if kept.
 \subsubsection{Missing Values Check}
-Missing values introduce sparsity and lower precision of models if many are present. In this specific dataset, the procedure did not detect any missing or 'zero' values, so no real removal action was needed and performed.
-
+Missing values introduce sparsity and lower precision of models if many are present.
+In this specific dataset, the procedure did not detect any missing or 'zero' values, so no real removal action was needed and performed.
 \subsubsection{Outlier Detection}
-First, data coming from sensor malfunction was manually deleted (e.g., removing rows where $u = -9999$), then outliers were removed based on valid photometric ranges. This detection was performed using two different rules:
+First, data coming from \textit{sensor malfunction} was manually deleted (e.g., removing rows where $u = -9999$), then outliers were removed based on \textbf{valid photometric ranges}.
+This detection was performed using two different rules:
 \begin{itemize}
-    \item \textbf{Interquartile Range (IQR):} A rule that statistically defines a "reasonable" range in which data points could fall, anything out of which is considered an outlier. In this case, the line was traced based on a 1.5IQR rule and only the data above such threshold was considered valid and kept.
-    \item \textbf{Gaussian Mixture Model (GMM):} Applying a simple instance of GMM to initial data can show outliers as points which have a very low percentage probability to belong to any and all of the classes that are present, indicating that they are very likely outliers.
+    \item \textbf{Interquartile Range (IQR):} A rule that statistically defines a "reasonable" range in which data points could fall, anything out of which is considered an outlier.
+In this case, the line was traced based on a \textbf{1.5IQR rule} and only the data above such threshold was considered valid and kept.
+\item \textbf{Gaussian Mixture Model (GMM):} Applying a simple instance of GMM to initial data can show outliers as points which have a very low percentage probability to belong to any and all of the classes that are present, indicating that they are very likely outliers.
 \end{itemize}
 These techniques were combined and applied to produce the following outlier detection result:
 \begin{figure}[H]
     \centering
     \includegraphics[width=1\textwidth]{Figure_10.png}
-    \caption{\textbf{Dataset Outliers}: On the left the distribution and where the threshold was placed by the 1.5IQR rule, effectively excluding all data to the left of it. On the right the GMM where outlier points were highlighted in red.}
+    \caption{\textbf{Dataset Outliers}: On the left the distribution and where the threshold was placed by the 1.5IQR rule, effectively excluding all data to the left of it.
+On the right the GMM where outlier points were highlighted in red.}
     \label{fig:outliers_IQR_GMM}
 \end{figure}
 
 \subsubsection{Label Encoding}
-Since the target label for classification was categorical (it being a string with the name of the object), a label encoder was used to convert it to a number. Keeping categorical, string-like features might have the model learn inexistent correlations based on the length of the word or specific letters (e.g., "words starting with 'A' are usually class 1"). Encoding to a simple ID ($1, 2, 3$) removes the "textual" features entirely, leaving only the category identity.
-
+Since the target label for classification was categorical (it being a string with the name of the object), a label encoder was used to convert it to a number.
+Keeping categorical, string-like features might have the model learn \textit{inexistent correlations} based on the length of the word or specific letters (e.g., "words starting with 'A' are usually class 1").
+Encoding to a simple ID ($1, 2, 3$) removes the "textual" features entirely, leaving only the \textbf{category identity}.
 \subsubsection{Feature Engineering}
 The features had the following distributions:
 \begin{figure}[H]
     \centering
     \includegraphics[width=1\textwidth]{Figure_1.png}
-    \caption{\textbf{Feature Distribution}: This plot visualizes how each of the post-preprocessing features is distributed inside each class. The most interesting feature is \textit{redshift}, as can be seen by its peculiar distribution with respect to the other ones.}
+    \caption{\textbf{Feature Distribution}: This plot visualizes how each of the post-preprocessing features is distributed inside each class.
+The most interesting feature is \textit{redshift}, as can be seen by its peculiar distribution with respect to the other ones.}
     \label{fig:distribution}
 \end{figure}
 
@@ -141,7 +150,9 @@ And based on correlation analysis produced the following correlation matrix:
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.7\textwidth]{Figure_2.png}
-    \caption{\textbf{Initial Correlation Matrix}: The initial correlation analysis. It is noticeable how many features are highly correlated with each other. This denotes a need to act on them, deleting the highly correlated ones, which in this analysis were considered the ones having a correlation index higher than 0.9.}
+    \caption{\textbf{Initial Correlation Matrix}: The initial correlation analysis.
+It is noticeable how many features are \textbf{highly correlated} with each other.
+This denotes a need to act on them, deleting the highly correlated ones, which in this analysis were considered the ones having a correlation index higher than 0.9.}
     \label{fig:correlationMatrix1}
 \end{figure}
 
@@ -150,11 +161,13 @@ As mentioned, this correlation matrix heavily implies some action needs to be ta
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.7\textwidth]{Figure_3.png}
-    \caption{\textbf{Final Correlation Matrix}: The final correlation analysis. Features are now much less correlated and appear to be distinct enough to be more than suitable for the following analysis steps.}
+    \caption{\textbf{Final Correlation Matrix}: The final correlation analysis.
+Features are now much less correlated and appear to be \textbf{distinct enough} to be more than suitable for the following analysis steps.}
     \label{fig:correlationMatrix2}
 \end{figure}
 
-With this purification step completed, highly correlated features were removed. Synthetic features representing color indices were created:
+With this purification step completed, highly correlated features were removed.
+\textbf{Synthetic features} representing color indices were created:
 \begin{equation}
     Color_{u\_g} = u - g, \quad Color_{g\_r} = g - r, \dots
 \end{equation}
@@ -162,34 +175,33 @@ With this purification step completed, highly correlated features were removed. 
 
 \subsubsection{Scaling}
 A \texttt{StandardScaler} was applied to normalize features to zero mean and unit variance.
-
 \subsubsection{Dimensionality Reduction}
-For clustering analysis, PCA was applied to reduce the feature space to 2 principal components.
-
+For clustering analysis, \textbf{PCA} was applied to reduce the feature space to 2 principal components.
 \subsection{Models Implemented}
-The following supervised models were implemented using 5-Fold Cross-Validation:
+The following supervised models were implemented using \textbf{5-Fold Cross-Validation}:
 \begin{itemize}
     \item \textbf{K-Nearest Neighbors (KNN):} Tuned for $k \in [1, 100]$.
-    \item \textbf{Random Forest Classifier (RFC):} Tuned for $n\_estimators \in [1, 100]$.
-    \item \textbf{Support Vector Machine (SVM):} Using the kernel modes ranging inside $kernel \in ['rbf', 'linear', 'sigmoid']$, tuned for regularization parameter $C \in [0.001, 0.01, 0.1, 1, 10, 100]$.
-    \item \textbf{Logistic Regression:} Tuned for $C \in [0.001, 0.01, 0.1, 1, 10, 100]$.
+\item \textbf{Random Forest Classifier (RFC):} Tuned for $n\_estimators \in [1, 100]$.
+\item \textbf{Support Vector Machine (SVM):} Using the kernel modes ranging inside $kernel \in ['rbf', 'linear', 'sigmoid']$, tuned for regularization parameter $C \in [0.001, 0.01, 0.1, 1, 10, 100]$.
+\item \textbf{Logistic Regression:} Tuned for $C \in [0.001, 0.01, 0.1, 1, 10, 100]$.
 \end{itemize}
 
 For unsupervised learning, \textbf{K-Means} and \textbf{Gaussian Mixture Models (GMM)} were utilized, setting $k=3$ to match the known number of classes.
-
-
 \section{Experiments and Results}
 \label{sec:results}
-The dataset was split into 80\% training and 20\% testing sets. The primary metric for model selection was the \textbf{Macro F1-Score} to account for potential class imbalances.
-During development, problems arose, prompting solutions that would tackle and try to solve them with the goal of maintaining or bettering performances in mind. The following are the most important ones to discuss.
+The dataset was split into \textbf{80\% training and 20\% testing sets}.
+The primary metric for model selection was the \textbf{Macro F1-Score} to account for potential class imbalances.
+During development, problems arose, prompting solutions that would tackle and try to solve them with the goal of maintaining or bettering performances in mind.
+The following are the most important ones to discuss.
 
 \subsection{The Redshift Feature}
- An important observation needs to be made regarding the \textit{redshift} feature: the influence that it has on the performance of the models.
- \textit{Redshift} is a phenomenon where the light (or other electromagnetic radiation) emitted by a celestial object is shifted toward the red end of the electromagnetic spectrum.
- This feature is heavily tied to the Doppler Effect and how light gets stretched by gravity, cosmological stretch and distance. 
- By nature, celestial objects that emit light are highly characterized by this metric, and it is, in fact, a very telling feature: during development, it was discovered that even with very minimal corrective actions on the dataset, performance on trained models that included this features were already on a degree of accuracy well above $0.97$, effectively meaning that the logical correlation between the class of the object and the redshift feature was so high that it was almost as if the data remained labeled even after removing the class feature.\\For the purpose of this project, and in order to create a bigger challenge, it was decided to also drop \textit{redshift} completely from the features included in the training and testing dataset. By doing so, classification became less trivial and solely based on color.
-
- \subsection{Synthetic Features}
+ An important observation needs to be made regarding the \textit{redshift} feature: the \textbf{influence} that it has on the performance of the models.
+\textit{Redshift} is a phenomenon where the light (or other electromagnetic radiation) emitted by a celestial object is shifted toward the red end of the electromagnetic spectrum.
+This feature is heavily tied to the \textit{Doppler Effect} and how light gets stretched by gravity, cosmological stretch and distance.
+By nature, celestial objects that emit light are highly characterized by this metric, and it is, in fact, a very telling feature: during development, it was discovered that even with very minimal corrective actions on the dataset, performance on trained models that included this features were already on a degree of accuracy well above $0.97$, effectively meaning that the logical correlation between the class of the object and the redshift feature was so high that it was almost as if the data remained labeled even after removing the class feature.\\For the purpose of this project, and in order to create 
+a \textbf{bigger challenge}, it was decided to also drop \textit{redshift} completely from the features included in the training and testing dataset.
+By doing so, classification became less trivial and \textbf{solely based on color}.
+\subsection{Synthetic Features}
  Removing the \textit{redshift} feature and $alpha$ and $delta$ features (position based features which have no meaningful information at all as to what object they refer to) meant that the model now only had very few color-based features to work with, namely:
  \begin{itemize}
     \item \textbf{u}: Ultraviolet filter in the photometric system
@@ -197,35 +209,40 @@ During development, problems arose, prompting solutions that would tackle and tr
     \item \textbf{r}: Red filter in the photometric system
     \item \textbf{i}: Near Infrared filter in the photometric system
     \item \textbf{z}: Infrared filter in the photometric system
- \end{itemize}
- With some of these being highly correlated features (as shown in [\ref{fig:correlationMatrix1}]), the new challenge was to find a way to work with the few remaining ones and extrapolate meaningful data from them.\\This is when it was decided to create the following synthetic features:
+ 
+\end{itemize}
+ With some of these being highly correlated features (as shown in [\ref{fig:correlationMatrix1}]), the new challenge was to find a way to work with the few remaining ones and extrapolate meaningful data from them.\\This is when it was decided to create the following \textbf{synthetic features}:
  \begin{itemize}
     \item \textbf{u\_g:} $u - g$ (\textbf{Ultraviolet-Green Index}: Sensitive to hot, young stars and Quasar UV-excess)
     \item \textbf{g\_r:} $g - r$ (\textbf{Green-Red Index}: A standard measure of surface temperature for main-sequence stars)
-    \item \textbf{r\_i:} $r - i$ (\textbf{Red-Near Infrared Index}: Useful for detecting cooler, redder objects like M-dwarfs)
+    \item \textbf{r\_i:} $r - i$ (\textbf{Red-Near Infrared Index}: Useful for detecting cooler, redder objects 
+like M-dwarfs)
     \item \textbf{i\_z:} $i - z$ (\textbf{Near Infrared-Infrared Index}: Helps distinguish high-redshift galaxies)
  \end{itemize}
- Introducing synthetic features means models now have compound attributes with real-world meaning they could use during training and evaluation.
-
- \subsection{Pipeline Training}
-Initially, data was scaled once after preprocessing and then given to all models. Mistakenly, it was not taken into account that when \textbf{cross\_val\_score} splits \textbf{X\_train} into internal folds, the validation fold has already influenced the scaler (mean/variance) used on the training fold. This "peeking" can lead to overly optimistic scores.\\By adding a pipeline in training loops, this mistake was easily fixed and data leakage was prevented by scaling the entire training set before the cross-validation loop.\\It is to note that this observation solely refers to the Supervised Learning phase.
-
-
+ Introducing synthetic features means models now have \textbf{compound attributes} with real-world meaning they could use during training and evaluation.
+\subsection{Pipeline Training}
+Initially, data was scaled once after preprocessing and then given to all models.
+\textbf{Mistakenly}, it was not taken into account that when \textbf{cross\_val\_score} splits \textbf{X\_train} into internal folds, the validation fold has already influenced the scaler (mean/variance) used on the training fold.
+This \textit{"peeking"} can lead to overly optimistic scores.\\By adding a pipeline in training loops, this mistake was easily fixed and \textbf{data leakage} was prevented by scaling the entire training set before the cross-validation loop.\\It is to note that this observation solely refers to the Supervised Learning phase.
 \subsection{Supervised Learning Performance: Hyperparameter Tuning and Evaluation}
-Cross-validation was used to find the optimal hyperparameters by training loops: each classification model was given an incrementally higher hyperparameter to work on the same dataset as all its predecessors. This method made it possible to investigate performance based solely on hyperparameter and not on change of data. Every model will be discussed separately.
+Cross-validation was used to find the optimal hyperparameters by training loops: each classification model was given an incrementally higher hyperparameter to work on the same dataset as all its predecessors.
+This method made it possible to investigate performance based solely on hyperparameter and not on change of data.
+Every model will be discussed separately.
 
-\subsubsection{KNearestNeighbour Classifier}
-KNN is a simple, instance-based algorithm that classifies a new data point by looking at the majority class of its 'k' closest neighbors in the feature space. It relies on the assumption that similar data points exist in close proximity to each other.
-
+\subsubsection{K-Nearest Neighbor Classifier}
+KNN is a simple, instance-based algorithm that classifies a new data point by looking at the majority class of its 'k' closest neighbors in the feature space.
+It relies on the assumption that similar data points exist in \textit{close proximity} to each other.
 \begin{figure}[H]
     \centering
     \includegraphics[width=1\textwidth]{Figure_4.png}
-    \caption{\textbf{K in KNN}: Graph shows how performance (F1-score) grows to a highpoint at $BestK = 37$, where it starts decreasing. In this case, there is a clear winner as for best hyperparameter value.}
+    \caption{\textbf{K in KNN}: Graph shows how performance (F1-score) grows to a highpoint at $BestK = 37$, where it starts decreasing.
+In this case, there is a clear winner as for best hyperparameter value.}
     \label{fig:correlationMatrix2}
 \end{figure}
-Having obtained the best value for K, a new KNN model was trained specifically with this hyperparameter value to show evaluation metrics on the best version of KNN obtainable on this dataset. These were the obtained results:
+Having obtained the best value for K, a new KNN model was trained specifically with this hyperparameter value to show evaluation metrics on the best version of KNN obtainable on this dataset.
+These were the obtained results:
 \begin{itemize}
-    \item F1-Score: 0.8341
+    \item F1-Score: \textbf{0.8341}
     \item Accuracy: 0.8736
     \item Precision: 0.8482
     \item Recall: 0.8312
@@ -240,15 +257,17 @@ Below is the confusion matrix of KNN with $n\_neighbors = 37$:
 
 
 \subsubsection{Random Forest Classifier}
-RFC is an ensemble learning method that builds multiple decision trees during training and merges them to get a more accurate and stable prediction. By taking the majority vote from many individual trees, it corrects for the tendency of single decision trees to overfit the training data.
-
+RFC is an \textbf{ensemble learning method} that builds multiple decision trees during training and merges them to get a more accurate and stable prediction.
+By taking the majority vote from many individual trees, it corrects for the tendency of single decision trees to \textit{overfit} the training data.
 \begin{figure}[H]
     \centering
     \includegraphics[width=1\textwidth]{Figure_5.png}
     \caption{\textbf{n\_neighbours in RFC}: Graph shows how performance (F1-score) grows.}
     \label{fig:correlationMatrix2}
 \end{figure}
-In this case, there seems to be an asymptotic behavior: even though F1-Score increases, it does so ever so slowly, while training time and load increases with an inverse proportion. Taking both information into account, $n\_estimators = 96$ is assumed to be the best hyperparameter without continuing training loop, as doing so would produce a minute upgrade in performance at great cost of GPU strain and training time. With this hyperparameter value, a new training of RFC is issued, which produces the following evaluation metrics:
+In this case, there seems to be an \textit{asymptotic behavior}: even though F1-Score increases, it does so ever so slowly, while training time and load increases with an inverse proportion.
+Taking both information into account, $n\_estimators = 96$ is assumed to be the best hyperparameter without continuing training loop, as doing so would produce a minute upgrade in performance at great cost of GPU strain and training time.
+With this hyperparameter value, a new training of RFC is issued, which produces the following evaluation metrics:
 \begin{itemize}
     \item F1-Score: 0.8306
     \item Accuracy: 0.8696
@@ -265,19 +284,21 @@ Below is the confusion matrix of RFC with $n\_estimators = 96$:
 
 
 \subsubsection{Support Vector Machines}
-SVM is a powerful algorithm that finds the optimal hyperplane (boundary) that best separates different classes in an N-dimensional 
-space. It aims to maximize the margin, that is the distance between the hyperplane and the nearest data points from each class.
+SVM is a powerful algorithm that finds the \textbf{optimal hyperplane} (boundary) that best separates different classes in an N-dimensional 
+
+space. It aims to \textit{maximize the margin}, that is the distance between the hyperplane and the nearest data points from each class.
 Due to the high computational cost of training SVMs on large datasets, hyperparameter tuning was performed on a random 10\% subset of the training data.
 All kernel instances were tested on this subset, namely $['linear', 'rbf', 'sigmoid']$, each with hyperparameter C ranging in $[0.001, 0.01, 0.1, 1, 10, 100]$.
 The best performing configuration found on the subset was then used to retrain the model on the full training dataset.
-
 \begin{figure}[H]
     \centering
     \includegraphics[width=1\textwidth]{Figure_8.png}
-    \caption{\textbf{Performance of SVM}: Graph shows a comparison between kernel modes and how well they performed cycling through the $C$ values. It is apparent the best performing mode was $'rbf'$.}
+    \caption{\textbf{Performance of SVM}: Graph shows a comparison between kernel modes and how well they performed cycling through the $C$ values.
+It is apparent the best performing mode was $'rbf'$.}
     \label{fig:correlationMatrix2}
 \end{figure}
-The graph shows the best kernel mode was 'rbf', which is the expected result: this indirectly confirms that the data is not linearly separable and therefore a linear kernel mode could have never performed well enough to surpass its competitors. RBF has the highest performance because it can "bend" the separation line around data, better fitting the separation and achieving a higher precision and accuracy.\\The statistics that follow are the ones obtained by training a SVM with kernel mode 'rbf' and with $C = 100$:
+The graph shows the best kernel mode was 'rbf', which is the expected result: this indirectly confirms that the data is \textit{not linearly separable} and therefore a linear kernel mode could have never performed well enough to surpass its competitors.
+RBF has the highest performance because it can \textbf{"bend" the separation line} around data, better fitting the separation and achieving a higher precision and accuracy.\\The statistics that follow are the ones obtained by training a SVM with kernel mode 'rbf' and with $C = 100$:
 
 \begin{itemize}
     \item F1-Score: 0.8135
@@ -289,25 +310,26 @@ Below is the confusion matrix of SVM with $kernel=rbf, C=100$:
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.7\textwidth]{Figure_9.png}
-    \caption{\textbf{Confusion Matrix}: This matrix shows how good the SVM model was at categorizing objects.}
+    \caption{\textbf{Confusion Matrix}: This matrix shows how good the SVM model was 
+at categorizing objects.}
     \label{fig:confusionMatrixSVM}
 \end{figure}
 
 
 \subsubsection{Logistic Regression}
-Logistic Regression is a supervised learning algorithm that applies the $'sigmoid'$ (logistic) function to a linear combination of features, mapping the output to a probability between 0 and 1: it makes predictions based on these probabilities, typically using a threshold to assign data points to specific categories. It is highly sensitive to feature scaling, which is why a StandardScaler was included within its training pipeline.
-
+Logistic Regression is a supervised learning algorithm that applies the $'sigmoid'$ (logistic) function to a linear combination of features, mapping the output to a probability between 0 and 1: it makes predictions based on these probabilities, typically using a threshold to assign data points to specific categories.
+It is highly sensitive to feature scaling, which is why a StandardScaler was included within its training pipeline.
 The decision to include this model was driven by its efficiency on large datasets and its feature interpretability, being able to indicate which color magnitudes or synthetic features are the most significant predictors for a specific type of celestial object through its coefficients.
-
 \begin{figure}[H]
     \centering
     \includegraphics[width=1\textwidth]{Figure_11.png}
-    \caption{\textbf{Performance of LR}: Graph shows a comparison cycling through the $C$ values. The highest F1-Score was obtained with $C=10$.}
+    \caption{\textbf{Performance of LR}: Graph shows a comparison cycling through the $C$ values.
+The highest F1-Score was obtained with $C=10$.}
     \label{fig:performanceMatrixLR}
 \end{figure}
-Even though Logistic Regression was promising "on paper", it ended up performing well below the average of its competitors, as data is not linearly separable and it struggles to capture complex, non-linear relationships between astronomical features. On top of that, despite the initial outlier removal, Logistic Regression remains more sensitive to extreme values or noise in the spectral data than a robust ensemble method like Random Forest.
-
-Here are the exaluation metrics relative to the best Logistic Regression instance that was retrained, that is the one with $C=10$:
+Even though Logistic Regression was promising "on paper", it ended up performing well below the average of its competitors, as data is not linearly separable and it struggles to capture complex, non-linear relationships between astronomical features.
+On top of that, despite the initial outlier removal, Logistic Regression remains more sensitive to extreme values or noise in the spectral data than a robust ensemble method like Random Forest.
+Here are the evaluation metrics relative to the best Logistic Regression instance that was retrained, that is the one with $C=10$:
 
 \begin{itemize}
     \item F1-Score: 0.6185
@@ -326,7 +348,9 @@ Below is the confusion matrix of the Linear Regression model with $C=10$:
 
 
 \subsubsection{Final Metrics}
-From the analysis that was conducted, out of all the models that were trained and evaluated, the winner, that is the model that achieved the best results, both in terms of accuracy and training time, is the $KNearest Neighbors$ model. Below is a small table summarizing the results of all models: 
+From the analysis that was conducted, out of all the models that were trained and 
+evaluated, the winner, that is the model that achieved the best results, both in terms of accuracy and training time, is the \textbf{K-Nearest Neighbors} model.
+Below is a small table summarizing the results of all models: 
 
 \begin{table}[H]
     \centering
@@ -337,7 +361,8 @@ From the analysis that was conducted, out of all the models that were trained an
         \midrule
         \textbf{KNN} & \textbf{0.8736} & \textbf{0.8482} & \textbf{0.8312} & \textbf{0.8341} \\
         Random Forest & 0.8696 & 0.8428 & 0.8260 & 0.8306 \\
-        SVM & 0.8653 & 0.8427 & 0.8162 & 0.8129 \\
+ 
+       SVM & 0.8653 & 0.8427 & 0.8162 & 0.8129 \\
         Logistic Regression & 0.7416 & 0.6595 & 0.6350 & 0.6185 \\
         \bottomrule
     \end{tabular}
@@ -346,23 +371,25 @@ From the analysis that was conducted, out of all the models that were trained an
 
 
 \subsection{Clustering Analysis}
-Clustering performance was evaluated by comparing models trained on high-dimensional scaled data against those trained on a two-dimensional PCA projection. This comparison highlights a significant trade-off: while dimensionality reduction simplifies the feature space, it does not inherently make the data more "clusterable" in a way that aligns with biological or physical ground truth.
-
+Clustering performance was evaluated by comparing models trained on high-dimensional scaled data against those trained on a two-dimensional PCA projection.
+This comparison highlights a significant \textit{trade-off}: while dimensionality reduction simplifies the feature space, it does not inherently make the data more "clusterable" in a way that aligns with biological or physical ground truth.
 \begin{figure}[H] 
     \centering \includegraphics[width=0.8\textwidth]{Figure_12.png} 
-    \caption{\textbf{Clustering Visualization}: Comparison between KMeans and GMM trained on raw scaled features (left) versus PCA-reduced features (right). The PCA projection visually collapses the variance into distinct regions, though significant overlap remains.} 
+    \caption{\textbf{Clustering Visualization}: Comparison between K-Means and GMM trained on raw scaled features (left) versus PCA-reduced features (right).
+The PCA projection visually collapses the variance into distinct regions, though significant overlap remains.} 
     \label{fig:clusteringPerformance} 
 \end{figure}
 
 \begin{table}[H]
     \centering
-    \caption{Raw vs PCA Clusteing: comparison of KMeans and GMM}
+    \caption{Raw vs PCA Clustering: comparison of K-Means and GMM}
     \begin{tabular}{lcccc}
         \toprule
         \textbf{Model} & \textbf{ARI} & \textbf{NMI} & \textbf{Silhouette} \\
         \midrule
-        KMeans (raw) & 0.1068 & 0.1904 & 0.3558 \\
-        KMeans (PCA) & 0.1129 & 0.1919 & 0.4322 \\
+        K-Means (raw) & 0.1068 & 0.1904 & 0.3558 \\
+        K-Means (PCA) & 0.1129 & 0.1919 
+& 0.4322 \\
         GMM (raw) & 0.0990 & 0.1466 & 0.1565 \\
         GMM (PCA) & 0.0652 & 0.1302 & 0.3862 \\
         \bottomrule
@@ -370,54 +397,59 @@ Clustering performance was evaluated by comparing models trained on high-dimensi
     \label{tab:results}
 \end{table}
 
-As illustrated in Figure [\ref{fig:clusteringPerformance}], PCA significantly improved the Silhouette Score for both models, increasing from $0.3558$ to $0.4322$ for KMeans and from a poor $0.1565$ to $0.3862$ for GMM. This indicates that PCA successfully filtered out noise, creating more defined and separable spatial groupings.
-
+As illustrated in Figure [\ref{fig:clusteringPerformance}], PCA significantly improved the Silhouette Score for both models, increasing from $0.3558$ to $0.4322$ for K-Means and from a poor $0.1565$ to $0.3862$ for GMM.
+This indicates that PCA successfully filtered out noise, creating more defined and separable spatial groupings.
 However, quantitative metrics reveal that this spatial clarity did not translate to meaningful classification: 
 \begin{itemize} 
-    \item \textbf{Weak Ground-Truth Alignment}: The Adjusted Rand Index (ARI) remained extremely low across all configurations, peaking at only $0.1129$ for KMeans on PCA data. This suggests that the natural clusters formed by the algorithms have very little overlap with the actual \textit{GALAXY, STAR,} and \textit{QSO} labels. 
-    \item \textbf{Information Loss in GMM}: Interestingly, while GMM's Silhouette score improved with PCA, its ARI actually dropped from $0.0990$ to $0.0652$. This indicates that the Gaussian components in the reduced 2D space lost critical density information present in the original feature set. 
-    \item \textbf{Conclusion on Viability}: With Normalized Mutual Info (NMI) values hovering below $0.20$, these features, even when optimized via PCA, are insufficient for unsupervised discovery of star classes. The data appears to exist on a continuum rather than in discrete, well-separated density clusters. 
+    \item \textbf{Weak Ground-Truth Alignment}: The Adjusted Rand Index (ARI) remained extremely low across all configurations, peaking at only $0.1129$ for K-Means on PCA data.
+This suggests that the natural clusters formed by the algorithms have very little overlap with the actual \textit{GALAXY, STAR,} and \textit{QSO} labels.
+\item \textbf{Information Loss in GMM}: Interestingly, while GMM's Silhouette score improved with PCA, its ARI actually dropped from $0.0990$ to $0.0652$.
+This indicates that the Gaussian components in the reduced 2D space lost critical density information present in the original feature set.
+\item \textbf{Conclusion on Viability}: With Normalized Mutual Info (NMI) values hovering below $0.20$, these features, even when optimized via PCA, are insufficient for unsupervised discovery of star classes.
+The data appears to exist on a \textit{continuum} rather than in discrete, well-separated density clusters.
 \end{itemize}
 
 
 \section{Conclusion}
 \label{sec:conclusions}
 
-This project set out to evaluate the performance of supervised and unsupervised machine learning models on the task of celestial object classification. A critical component of this study was the deliberate exclusion of the \textit{redshift} feature, forcing the models to rely solely on photometric color indices and reference magnitudes.
-
+This project set out to evaluate the performance of supervised and unsupervised machine learning models on the task of celestial object classification.
+A critical component of this study was the deliberate exclusion of the \textit{redshift} feature, forcing the models to rely solely on photometric color indices and reference magnitudes.
 \subsection{Supervised Learning Synthesis}
-The results demonstrate that while \textit{redshift} is the strongest predictor for cosmological classification, it is not strictly necessary for achieving reasonable accuracy. 
+The results demonstrate that while \textit{redshift} is the strongest predictor for cosmological classification, it is not strictly necessary for achieving reasonable accuracy.
 \begin{itemize}
-    \item \textbf{Non-Linearity is Key:} The \textbf{K-Nearest Neighbors (KNN)} classifier ($F1=0.8341$) and \textbf{Random Forest} ($F1=0.8306$) outperformed the linear models. This confirms that the decision boundaries between Stars, Galaxies, and Quasars in color space ($u-g$, $g-r$, etc.) are highly non-linear and complex.
-    \item \textbf{The Failure of Linear Models:} \textbf{Logistic Regression} performed significantly worse ($F1=0.6185$), proving that celestial classes cannot be separated by simple hyperplanes when limited to photometric data.
-    \item \textbf{Robustness:} KNN proved to be the most efficient balance of training time and accuracy, likely because the density of similar stellar objects in color space is high, favoring instance-based learning.
+    \item \textbf{Non-Linearity is Key:} The \textbf{K-Nearest Neighbors (KNN)} classifier ($F1=0.8341$) and \textbf{Random Forest} ($F1=0.8306$) outperformed the linear models.
+This confirms that the decision boundaries between Stars, Galaxies, and Quasars in color space ($u-g$, $g-r$, etc.) are \textbf{highly non-linear} and complex.
+\item \textbf{The Failure of Linear Models:} \textbf{Logistic Regression} performed significantly worse ($F1=0.6185$), proving that celestial classes cannot be separated by simple hyperplanes when limited to photometric data.
+\item \textbf{Robustness:} KNN proved to be the most efficient balance of training time and accuracy, likely because the density of similar stellar objects in color space is high, favoring instance-based learning.
 \end{itemize}
 
 \subsection{Unsupervised Learning Insights}
-The clustering analysis provided a crucial negative result. Despite the application of PCA to reduce noise, neither \textbf{KMeans} nor \textbf{GMM} successfully reconstructed the true semantic classes (ARI $< 0.12$). 
-This suggests that in the photometric feature space, Stars, Galaxies, and Quasars do not form distinct, separated "blobs." Instead, they likely exist on a continuous manifold (the stellar locus) where classes overlap significantly. This finding underscores the necessity of labeled data (Supervised Learning) for this specific astronomical task.
-
+The clustering analysis provided a crucial \textbf{negative result}.
+Despite the application of PCA to reduce noise, neither \textbf{K-Means} nor \textbf{GMM} successfully reconstructed the true semantic classes (ARI $< 0.12$).
+This suggests that in the photometric feature space, Stars, Galaxies, and Quasars do not form distinct, separated "blobs."
+Instead, they likely exist on a continuous manifold (the \textit{stellar locus}) where classes overlap significantly.
+This finding underscores the necessity of labeled data (Supervised Learning) for this specific astronomical task.
 \subsection{Future Outlook}
-While the removal of redshift provided a challenging testbed for these algorithms, modern astronomical surveys often require higher precision. Future iterations of this work could explore:
+While the removal of redshift provided a challenging testbed for these algorithms, modern astronomical surveys often require higher precision.
+Future iterations of this work could explore:
 \begin{enumerate}
     \item \textbf{Hierarchical Classification:} Separating Stars from Extragalactic objects first, then classifying Galaxies vs. Quasars.
-    \item \textbf{Deep Learning on Raw Spectra:} Utilizing 1D Convolutional Neural Networks (CNNs) on the raw spectral data rather than extracted tabular features to capture absorption lines invisible to standard photometry.
+\item \textbf{Deep Learning on Raw Spectra:} Utilizing 1D Convolutional Neural Networks (CNNs) on the raw spectral data rather than extracted tabular features to capture absorption lines invisible to standard photometry.
 \end{enumerate}
 
 In conclusion, while "blind" photometric classification is viable using non-linear ensemble or instance-based methods, the intrinsic topology of the data prevents simple linear separation or unsupervised clustering from achieving high-fidelity results.
-
-
 \begin{thebibliography}{9}
 \label{sec:refs}
 
 \bibitem{sdss}
 Sloan Digital Sky Survey (SDSS), \textit{Star Classification Dataset}, Kaggle Repository.
-
 \bibitem{sklearn}
 Pedregosa, F., et al., "Scikit-learn: Machine Learning in Python," \textit{Journal of Machine Learning Research}, 2011.
 
 \bibitem{lectures}
-Beyan, C., "Machine Learning Course Slides," University of Verona, A.Y. 2025/2026.
+Beyan, C., "Machine Learning Course Slides," University of Verona, A.Y.
+2025/2026.
 
 \bibitem{geron}
 G{\'e}ron, A., "Hands-On Machine Learning with Scikit-Learn, Keras, and TensorFlow," \textit{O'Reilly Media}, 2019.
