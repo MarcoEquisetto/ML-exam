@@ -66,12 +66,16 @@ Model performance is primarily evaluated using the \textbf{F1-score}, with the a
 The classification of celestial objects is a \textbf{fundamental task} in modern astrophysics.
 With the advent of large-scale sky surveys, and the ever-increasing amount of satellites and telescopes, the volume of spectral and photometric data has grown exponentially, creating the need to move from manual classification to \textit{machine learning} and \textit{deep learning} models.
 Although machine learning models pale in comparison to deep learning ones in terms of ability to process high dimensionality and quantity data, they still offer a more than viable solution for rudimentary tasks such as the one tackled in this discussion.
+
+
 \section{Motivation and Rationale}
 \label{sec:motivation}
 This project addresses the problem of classifying objects from the Sloan Digital Sky Survey (SDSS) into three distinct classes: \textbf{Galaxies}, \textbf{Stars}, and \textbf{Quasars}.
 The rationale behind this work is to compare the efficacy of \textit{distance-based}, \textit{ensemble}, and \textit{linear} models in handling astronomical data, which is often characterized by \textbf{high dimensionality}, considerable size and high levels of noise.
 Most models currently employed rely on classifying bodies by redshift and spectral indexes.
 This project turned such a task into one that relies \textbf{solely on color and emitted light}.
+
+
 \section{State of the Art}
 \label{sec:sota}
 Astronomical classification has traditionally relied on the \textit{Morgan-Keenan} (MK) method, where each star has a spectral class and a luminosity class assigned to it.
@@ -83,6 +87,7 @@ Such data types are of complicated distributions and huge quantities, rendering 
     \item \textbf{Imbalance}: The nature of the universe renders some objects much rarer than others (e.g. highly redshifted Quasars) and therefore data about said objects can be extremely hard to obtain, making it difficult to train models with equal representation of all classes.
 \item \textbf{Domain Shift}: Due to how much celestial objects can vary both inside and outside classes, training a model on one dataset with labeled data from one survey and then applying it to another dataset might result in poor performance due to the presence of different levels of noise profiles and instrument sensitivity, which is and always will be inevitable since data come from different measuring instruments.
 \end{itemize}
+
 
 \section{Objectives}
 \label{sec:objectives}
@@ -112,9 +117,11 @@ To prepare the data for training, the following steps were taken:
 
 \subsubsection{Cleaning}
 The ID columns were dropped since they do not provide real information and would very likely introduce \textit{biases} or \textit{noise} if kept.
+
 \subsubsection{Missing Values Check}
 Missing values introduce sparsity and lower precision of models if many are present.
 In this specific dataset, the procedure did not detect any missing or 'zero' values, so no real removal action was needed and performed.
+
 \subsubsection{Outlier Detection}
 First, data coming from \textit{sensor malfunction} was manually deleted (e.g., removing rows where $u = -9999$), then outliers were removed based on \textbf{valid photometric ranges}.
 This detection was performed using two different rules:
@@ -136,6 +143,8 @@ On the right the GMM where outlier points were highlighted in red.}
 Since the target label for classification was categorical (it being a string with the name of the object), a label encoder was used to convert it to a number.
 Keeping categorical, string-like features might have the model learn \textit{inexistent correlations} based on the length of the word or specific letters (e.g., "words starting with 'A' are usually class 1").
 Encoding to a simple ID ($1, 2, 3$) removes the "textual" features entirely, leaving only the \textbf{category identity}.
+
+
 \subsubsection{Feature Engineering}
 The features had the following distributions:
 \begin{figure}[H]
@@ -175,8 +184,10 @@ With this purification step completed, highly correlated features were removed.
 
 \subsubsection{Scaling}
 A \texttt{StandardScaler} was applied to normalize features to zero mean and unit variance.
+
 \subsubsection{Dimensionality Reduction}
 For clustering analysis, \textbf{PCA} was applied to reduce the feature space to 2 principal components.
+
 \subsection{Models Implemented}
 The following supervised models were implemented using \textbf{5-Fold Cross-Validation}:
 \begin{itemize}
@@ -185,8 +196,8 @@ The following supervised models were implemented using \textbf{5-Fold Cross-Vali
 \item \textbf{Support Vector Machine (SVM):} Using the kernel modes ranging inside $kernel \in ['rbf', 'linear', 'sigmoid']$, tuned for regularization parameter $C \in [0.001, 0.01, 0.1, 1, 10, 100]$.
 \item \textbf{Logistic Regression:} Tuned for $C \in [0.001, 0.01, 0.1, 1, 10, 100]$.
 \end{itemize}
-
 For unsupervised learning, \textbf{K-Means} and \textbf{Gaussian Mixture Models (GMM)} were utilized, setting $k=3$ to match the known number of classes.
+
 \section{Experiments and Results}
 \label{sec:results}
 The dataset was split into \textbf{80\% training and 20\% testing sets}.
@@ -201,6 +212,7 @@ This feature is heavily tied to the \textit{Doppler Effect} and how light gets s
 By nature, celestial objects that emit light are highly characterized by this metric, and it is, in fact, a very telling feature: during development, it was discovered that even with very minimal corrective actions on the dataset, performance on trained models that included this features were already on a degree of accuracy well above $0.97$, effectively meaning that the logical correlation between the class of the object and the redshift feature was so high that it was almost as if the data remained labeled even after removing the class feature.\\For the purpose of this project, and in order to create 
 a \textbf{bigger challenge}, it was decided to also drop \textit{redshift} completely from the features included in the training and testing dataset.
 By doing so, classification became less trivial and \textbf{solely based on color}.
+
 \subsection{Synthetic Features}
  Removing the \textit{redshift} feature and $alpha$ and $delta$ features (position based features which have no meaningful information at all as to what object they refer to) meant that the model now only had very few color-based features to work with, namely:
  \begin{itemize}
@@ -209,21 +221,22 @@ By doing so, classification became less trivial and \textbf{solely based on colo
     \item \textbf{r}: Red filter in the photometric system
     \item \textbf{i}: Near Infrared filter in the photometric system
     \item \textbf{z}: Infrared filter in the photometric system
- 
 \end{itemize}
- With some of these being highly correlated features (as shown in [\ref{fig:correlationMatrix1}]), the new challenge was to find a way to work with the few remaining ones and extrapolate meaningful data from them.\\This is when it was decided to create the following \textbf{synthetic features}:
- \begin{itemize}
+
+With some of these being highly correlated features (as shown in [\ref{fig:correlationMatrix1}]), the new challenge was to find a way to work with the few remaining ones and extrapolate meaningful data from them.\\This is when it was decided to create the following \textbf{synthetic features}:
+\begin{itemize}
     \item \textbf{u\_g:} $u - g$ (\textbf{Ultraviolet-Green Index}: Sensitive to hot, young stars and Quasar UV-excess)
     \item \textbf{g\_r:} $g - r$ (\textbf{Green-Red Index}: A standard measure of surface temperature for main-sequence stars)
-    \item \textbf{r\_i:} $r - i$ (\textbf{Red-Near Infrared Index}: Useful for detecting cooler, redder objects 
-like M-dwarfs)
+    \item \textbf{r\_i:} $r - i$ (\textbf{Red-Near Infrared Index}: Useful for detecting cooler, redder objects like M-dwarfs)
     \item \textbf{i\_z:} $i - z$ (\textbf{Near Infrared-Infrared Index}: Helps distinguish high-redshift galaxies)
  \end{itemize}
- Introducing synthetic features means models now have \textbf{compound attributes} with real-world meaning they could use during training and evaluation.
+Introducing synthetic features means models now have \textbf{compound attributes} with real-world meaning they could use during training and evaluation.
+
 \subsection{Pipeline Training}
 Initially, data was scaled once after preprocessing and then given to all models.
 \textbf{Mistakenly}, it was not taken into account that when \textbf{cross\_val\_score} splits \textbf{X\_train} into internal folds, the validation fold has already influenced the scaler (mean/variance) used on the training fold.
 This \textit{"peeking"} can lead to overly optimistic scores.\\By adding a pipeline in training loops, this mistake was easily fixed and \textbf{data leakage} was prevented by scaling the entire training set before the cross-validation loop.\\It is to note that this observation solely refers to the Supervised Learning phase.
+
 \subsection{Supervised Learning Performance: Hyperparameter Tuning and Evaluation}
 Cross-validation was used to find the optimal hyperparameters by training loops: each classification model was given an incrementally higher hyperparameter to work on the same dataset as all its predecessors.
 This method made it possible to investigate performance based solely on hyperparameter and not on change of data.
@@ -284,9 +297,7 @@ Below is the confusion matrix of RFC with $n\_estimators = 96$:
 
 
 \subsubsection{Support Vector Machines}
-SVM is a powerful algorithm that finds the \textbf{optimal hyperplane} (boundary) that best separates different classes in an N-dimensional 
-
-space. It aims to \textit{maximize the margin}, that is the distance between the hyperplane and the nearest data points from each class.
+SVM is a powerful algorithm that finds the \textbf{optimal hyperplane} (boundary) that best separates different classes in an N-dimensional space. It aims to \textit{maximize the margin}, that is the distance between the hyperplane and the nearest data points from each class.
 Due to the high computational cost of training SVMs on large datasets, hyperparameter tuning was performed on a random 10\% subset of the training data.
 All kernel instances were tested on this subset, namely $['linear', 'rbf', 'sigmoid']$, each with hyperparameter C ranging in $[0.001, 0.01, 0.1, 1, 10, 100]$.
 The best performing configuration found on the subset was then used to retrain the model on the full training dataset.
@@ -388,8 +399,7 @@ The PCA projection visually collapses the variance into distinct regions, though
         \textbf{Model} & \textbf{ARI} & \textbf{NMI} & \textbf{Silhouette} \\
         \midrule
         K-Means (raw) & 0.1068 & 0.1904 & 0.3558 \\
-        K-Means (PCA) & 0.1129 & 0.1919 
-& 0.4322 \\
+        K-Means (PCA) & 0.1129 & 0.1919 & 0.4322 \\
         GMM (raw) & 0.0990 & 0.1466 & 0.1565 \\
         GMM (PCA) & 0.0652 & 0.1302 & 0.3862 \\
         \bottomrule
@@ -419,9 +429,9 @@ A critical component of this study was the deliberate exclusion of the \textit{r
 The results demonstrate that while \textit{redshift} is the strongest predictor for cosmological classification, it is not strictly necessary for achieving reasonable accuracy.
 \begin{itemize}
     \item \textbf{Non-Linearity is Key:} The \textbf{K-Nearest Neighbors (KNN)} classifier ($F1=0.8341$) and \textbf{Random Forest} ($F1=0.8306$) outperformed the linear models.
-This confirms that the decision boundaries between Stars, Galaxies, and Quasars in color space ($u-g$, $g-r$, etc.) are \textbf{highly non-linear} and complex.
-\item \textbf{The Failure of Linear Models:} \textbf{Logistic Regression} performed significantly worse ($F1=0.6185$), proving that celestial classes cannot be separated by simple hyperplanes when limited to photometric data.
-\item \textbf{Robustness:} KNN proved to be the most efficient balance of training time and accuracy, likely because the density of similar stellar objects in color space is high, favoring instance-based learning.
+    This confirms that the decision boundaries between Stars, Galaxies, and Quasars in color space ($u-g$, $g-r$, etc.) are \textbf{highly non-linear} and complex.
+    \item \textbf{The Failure of Linear Models:} \textbf{Logistic Regression} performed significantly worse ($F1=0.6185$), proving that celestial classes cannot be separated by simple hyperplanes when limited to photometric data.
+    \item \textbf{Robustness:} KNN proved to be the most efficient balance of training time and accuracy, likely because the density of similar stellar objects in color space is high, favoring instance-based learning.
 \end{itemize}
 
 \subsection{Unsupervised Learning Insights}
