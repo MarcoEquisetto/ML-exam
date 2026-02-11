@@ -37,9 +37,9 @@ def drawCorrelationMatrix(dataset):
     plt.show()
     return CM
 
-def plotQualityCheckGraph(scores, bestHyperparameter, bestScore, modelName):
-    fig = plt.figure(figsize = (10, 5))
-    plt.plot(range(1, len(scores) + 1), scores, marker = 'o', markersize = 4, color = 'steelblue')
+def plotQualityCheckGraph(scores, paramValues, bestHyperparameter, bestScore, modelName):
+    plt.figure(figsize = (10, 5))
+    plt.plot(paramValues, scores, marker = 'o', markersize = 4, color = 'steelblue')
     plt.title(f'{modelName}: F1-Score vs. HyperParameter (Best = {bestHyperparameter})', fontsize = 14)
     plt.xlabel('HyperParameter Value')
     plt.ylabel('F1-Score (macro)')
