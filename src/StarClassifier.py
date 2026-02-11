@@ -28,7 +28,7 @@ randomState = 42
 
 # Hyperparameters max ranges
 maxK = 100
-maxEstimators = 100
+maxEstimators = 150
 
 # Import the Dataset and print its shape
 dataset = pd.read_csv('./dataset/star_classification.csv')
@@ -128,50 +128,42 @@ plt.show()
 print(f"\n\n> Encoding categorical features...")
 LE = LabelEncoder()
 dataset['class'] = LE.fit_transform(dataset['class'])
-print(dataset.head())
 
 
 # Feature correlation analysis
 print(f"\n\n> Feature correlation analysis")
 CM = drawCorrelationMatrix(dataset)
-print(f"\n\n> Arbitrarily considering features with correlation index higher than 0.9 as highly correlated, the following pairs are highly correlated:")
-pairs = []
-for i in range(len(CM.data.columns)):
-    for j in range(i):
-        if CM.data.iloc[i, j] > 0.9 and i != j:
-            pair = (CM.data.columns[i], CM.data.columns[j], CM.data.iloc[i, j])
-            pairs.append(pair)
-            print(f"> {pair[0]} and {pair[1]} with correlation index {pair[2]:.2f}")
 
-print(f"\n> Drop highly correlated features, create synthetic ones and recompute correlation matrix")
-
-# Subtracting magnitudes gives the color
+print(f"\n\n> Generating Model-Specific Feature Sets...")
 dataset['u_g'] = dataset['u'] - dataset['g']
 dataset['g_r'] = dataset['g'] - dataset['r']
 dataset['r_i'] = dataset['r'] - dataset['i']
 dataset['i_z'] = dataset['i'] - dataset['z']
-dataset = dataset.drop(columns = ['u', 'g', 'i', 'z', 'redshift', 'alpha', 'delta'])
-for pair in pairs:
-    toDrop = pair[1]
-    if toDrop in dataset.columns:
-        dataset = dataset.drop(columns = [toDrop])
-        print(f"> Dropped feature: {toDrop}")
-print(f"\n\n> Optimized correlation matrix:\n{drawCorrelationMatrix(dataset).data}")
+
+# Drop 'redshift' since its too good, and 'alpha', 'delta' as they are positional
+cols_to_exclude = ['redshift', 'alpha', 'delta']
+dataset = dataset.drop(columns=[c for c in cols_to_exclude if c in dataset.columns])
+
+print(f"\n> Optimized correlation matrix (All Features):\n{drawCorrelationMatrix(dataset).data}")
 
 
-# Split the dataset into features and target variable
-print(f"\n\n> Split dataset into features and target variable")
-targetName = "class"
-X = dataset.drop(columns = [targetName])
-y = dataset[targetName]
-print(f"Features used for classification: {X.columns.to_list()}")
-print(f"Shape of features: {X.shape}")
+X_tree = dataset.drop(columns=['class'])
+X_linear = dataset.drop(columns=['class', 'u', 'g', 'r', 'i', 'z'])
+y = dataset['class']
+
+print(f"\n> Feature Sets Prepared:")
+print(f"  1. X_tree (for Random Forest): {X_tree.shape} - Features: {X_tree.columns.to_list()}")
+print(f"  2. X_linear (for KNN/SVM/LR):  {X_linear.shape} - Features: {X_linear.columns.to_list()}")
 
 
 ## Split the dataset into training and testing sets (80% train, 20% test)
 print(f"\n\n> Split the dataset into Training and Testing sets (80%, 20%)")
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2, random_state = randomState)
 
+# Split Tree Data
+X_train_tree, X_test_tree, y_train, y_test = train_test_split(X_tree, y, test_size = 0.2, random_state = randomState)
+
+# Split Linear Data (y_train/y_test are identical to above, so we ignore the y output here)
+X_train_lin, X_test_lin, _, _ = train_test_split(X_linear, y, test_size = 0.2, random_state = randomState)
 
 
 ## Model Training and Evaluation
@@ -182,20 +174,20 @@ Ks = range(1, maxK + 1)
 KNNcrossValidationScores = []
 print(f"\n\n> KNN training: evaluate KNNs with k ranging from 1 to {max(Ks)} using 5-Fold Cross Validation and F1-score (macro) as metrics")
 for n_neighbors in Ks:
-    pipeline = make_pipeline(StandardScaler(), KNeighborsClassifier(n_neighbors = n_neighbors))
-    scores = cross_val_score(pipeline, X_train, y_train, cv = 5, scoring = 'f1_macro')
+    pipeline = make_pipeline(StandardScaler(), KNeighborsClassifier(n_neighbors = n_neighbors, class_weight = 'balanced'))
+    # Note: Using X_train_lin
+    scores = cross_val_score(pipeline, X_train_lin, y_train, cv = 5, scoring = 'f1_macro')
     KNNcrossValidationScores.append(scores.mean())
     print(f"> n_neighbors = {n_neighbors}, F1-score (mean of batch) = {scores.mean():.4f}")
 
 # Extrapolate best K
 bestK = Ks[np.argmax(KNNcrossValidationScores)]
 
-
 # Retrain with that K to show graphs related to this iteration
 print(f"\n> Best k value for KNN found to be {bestK} with F1-score = {max(KNNcrossValidationScores):.4f}: Retraining KNN with best k to show related graphs and metrics")
-bestKNNPipeline = make_pipeline(StandardScaler(), KNeighborsClassifier(n_neighbors = bestK))
-bestKNNPipeline.fit(X_train, y_train)
-predVal = bestKNNPipeline.predict(X_test)
+bestKNNPipeline = make_pipeline(StandardScaler(), KNeighborsClassifier(n_neighbors = bestK, class_weight = 'balanced'))
+bestKNNPipeline.fit(X_train_lin, y_train)
+predVal = bestKNNPipeline.predict(X_test_lin)
 
 plotQualityCheckGraph(KNNcrossValidationScores, bestK, max(KNNcrossValidationScores), "KNearestNeighbors")
 displayConfusionMatrix(y_test, predVal, f"Best KNN (HP = {bestK})")
@@ -207,12 +199,14 @@ print(f"Recall: {recall_score(y_test, predVal, average = 'macro'):.4f}")
 
 
 # Random Forest Classifier training
-estimators = range(1, maxEstimators + 1)
+# DATASET: Uses X_tree (Combined features) as trees handle correlation well
+estimators = range(50, maxEstimators + 1)
 RFcrossValidationScores = []
 print(f"\n\n> Random Forest Classifier training: evaluate RFCs with n_estimators ranging from 1 to {max(estimators)} using 5-Fold Cross Validation and F1-score (macro) as metrics")
 for n_estimators in estimators:
-    pipeline = make_pipeline(StandardScaler(), RandomForestClassifier(n_estimators = n_estimators, random_state = randomState))
-    scores = cross_val_score(pipeline, X_train, y_train, cv = 5, scoring = 'f1_macro')
+    pipeline = make_pipeline(StandardScaler(), RandomForestClassifier(n_estimators = n_estimators, random_state = randomState, class_weight = 'balanced'))
+    # Note: Using X_train_tree
+    scores = cross_val_score(pipeline, X_train_tree, y_train, cv = 5, scoring = 'f1_macro')
     RFcrossValidationScores.append(scores.mean())
     print(f"> n_estimators = {n_estimators}, F1-score (mean of batch) = {scores.mean():.4f}")
 
@@ -221,9 +215,9 @@ bestEstimator = estimators[np.argmax(RFcrossValidationScores)]
 
 
 print(f"\n> Best validation F1-score: {max(RFcrossValidationScores):.4f} achieved at n_estimators = {bestEstimator}... Retrain RFC with best n_estimators to show related graphs")
-bestRFCPipeline = make_pipeline(StandardScaler(), RandomForestClassifier(n_estimators = bestEstimator, random_state = randomState))
-bestRFCPipeline.fit(X_train, y_train)
-predVal = bestRFCPipeline.predict(X_test)
+bestRFCPipeline = make_pipeline(StandardScaler(), RandomForestClassifier(n_estimators = bestEstimator, random_state = randomState, class_weight = 'balanced'))
+bestRFCPipeline.fit(X_train_tree, y_train)
+predVal = bestRFCPipeline.predict(X_test_tree)
 
 plotQualityCheckGraph(RFcrossValidationScores, bestEstimator, max(RFcrossValidationScores), "RandomForestClassifier")
 displayConfusionMatrix(y_test, predVal, f"Best Random Forest (HP = {bestEstimator})")
@@ -235,8 +229,10 @@ print(f"Recall: {recall_score(y_test, predVal, average = 'macro'):.4f}")
 
 
 # SVM training
-sampleIndex = np.random.choice(X_train.index, size=int(len(X_train) * 0.1), replace = False)
-Xsplit = X_train.loc[sampleIndex]
+# DATASET: Uses X_linear (Engineered features only)
+# Tuning on subset of linear data for speed
+sampleIndex = np.random.choice(X_train_lin.index, size=int(len(X_train_lin) * 0.1), replace = False)
+Xsplit = X_train_lin.loc[sampleIndex]
 ysplit = y_train.loc[sampleIndex]
 print(f"\n> Tuning SVM on subset of {len(Xsplit)} rows...")
  
@@ -251,7 +247,8 @@ for kernel in kernels:
     print(f"\n> Evaluating: {kernel.upper()}")
     
     for C in Cs:
-        SVCPipeline = make_pipeline(StandardScaler(), SVC(C = C, kernel = kernel, random_state = randomState))
+        SVCPipeline = make_pipeline(StandardScaler(), SVC(C = C, kernel = kernel, random_state = randomState, class_weight = 'balanced'))
+        # Note: Using Xsplit (subset of linear data)
         cv_scores = cross_val_score(SVCPipeline, Xsplit, ysplit, cv = 5, scoring = 'f1_macro')
         mean_score = cv_scores.mean()
         scores.append(mean_score)
@@ -274,9 +271,9 @@ bestKernel = bestParams['kernel']
 print(f"\n> Best Validation Score: {bestScore:.4f}")
 print(f"> Best Params: Kernel='{bestKernel}', C={bestC}: Retraining model with best params to show related graphs and metrics")
 
-bestSVCPipeline = make_pipeline(StandardScaler(), SVC(C = bestC, kernel = bestKernel, random_state = randomState))
-bestSVCPipeline.fit(X_train, y_train)
-predVal = bestSVCPipeline.predict(X_test)
+bestSVCPipeline = make_pipeline(StandardScaler(), SVC(C = bestC, kernel = bestKernel, random_state = randomState, class_weight = 'balanced'))
+bestSVCPipeline.fit(X_train_lin, y_train)
+predVal = bestSVCPipeline.predict(X_test_lin)
 
 displayConfusionMatrix(y_test, predVal, f"Best SVM (HP = C={bestC}, kernel={bestKernel})")
 
@@ -293,8 +290,8 @@ LRcrossValidationScores = []
 
 print(f"\n\n> Logistic Regression training: evaluate LRs with C ranging inside {LR_Cs} using 5-Fold Cross Validation and F1-score (macro) as metrics")
 for C in LR_Cs:
-    LRPipeline = make_pipeline(StandardScaler(), LogisticRegression(C = C, random_state = randomState, max_iter = 1000))
-    scores = cross_val_score(LRPipeline, X_train, y_train, cv = 5, scoring = 'f1_macro')
+    LRPipeline = make_pipeline(StandardScaler(), LogisticRegression(C = C, random_state = randomState, max_iter = 1000, class_weight = 'balanced'))
+    scores = cross_val_score(LRPipeline, X_train_lin, y_train, cv = 5, scoring = 'f1_macro')
     LRcrossValidationScores.append(scores.mean())
     print(f"> C = {C}, F1-score (mean of batch) = {scores.mean():.4f}")
 
@@ -303,9 +300,9 @@ bestLR_C = LR_Cs[np.argmax(LRcrossValidationScores)]
 
 print(f"\n> Best validation F1-score: {max(LRcrossValidationScores):.4f} achieved at C = {bestLR_C}... Retrain Logistic Regression with best C to show related graphs")
 
-bestLRPipeline = make_pipeline(StandardScaler(), LogisticRegression(C = bestLR_C, random_state = randomState, max_iter = 1000))
-bestLRPipeline.fit(X_train, y_train)
-predVal = bestLRPipeline.predict(X_test)
+bestLRPipeline = make_pipeline(StandardScaler(), LogisticRegression(C = bestLR_C, random_state = randomState, max_iter = 1000, class_weight = 'balanced'))
+bestLRPipeline.fit(X_train_lin, y_train)
+predVal = bestLRPipeline.predict(X_test_lin)
 plotLogQualityCheckGraph(LRcrossValidationScores, LR_Cs, bestLR_C, max(LRcrossValidationScores), "Logistic Regression")
 displayConfusionMatrix(y_test, predVal, f"Best Logistic Regression (C = {bestLR_C})")
 
@@ -318,9 +315,13 @@ print(f"Recall: {recall_score(y_test, predVal, average = 'macro'):.4f}")
 ## Clustering
 print(f"\n\n> Clustering models to be implemented:\n1. KMeans\n2. GMM\nBoth models will be trained on \"raw\" data and on PCA-optimized data to compare results")
 
+# For clustering, use X_linear (Colors) as it represents the spectral type better than raw magnitudes which are biased by distance/brightness
+X_clustering = X_linear
+print(f"> Using Linear (Color) features for clustering: {X_clustering.columns.to_list()}")
+
 # Traing new scaler for clustering
 scaler = StandardScaler()
-X_scaled = pd.DataFrame(scaler.fit_transform(X), columns = X.columns)
+X_scaled = pd.DataFrame(scaler.fit_transform(X_clustering), columns = X_clustering.columns)
 PCA = PCA(n_components = 2, random_state = randomState)
 X_PCA = PCA.fit_transform(X_scaled)
 
@@ -342,7 +343,7 @@ PCA_GMM = GMPPCA.fit_predict(X_PCA)
 fig, axes = plt.subplots(2, 2, figsize = (18, 12))
 # KMeans Plots
 sns.scatterplot(x = X_PCA[:, 0], y = X_PCA[:, 1], hue = raw_Kmeans, palette = 'viridis', alpha = 0.6, ax = axes[0, 0])
-axes[0, 0].set_title('KMeans (Trained on Raw Data)')
+axes[0, 0].set_title('KMeans (Trained on Standardized Data)')
 axes[0, 0].set_xlabel('PC1')
 axes[0, 0].set_ylabel('PC2')
 sns.scatterplot(x = X_PCA[:, 0], y = X_PCA[:, 1], hue = PCA_Kmeans, palette = 'viridis', alpha = 0.6, ax = axes[0, 1])
@@ -352,7 +353,7 @@ axes[0, 1].set_ylabel('PC2')
 
 # GMM Plots
 sns.scatterplot(x = X_PCA[:, 0], y = X_PCA[:, 1], hue = raw_GMM, palette = 'magma', alpha = 0.6, ax = axes[1, 0])
-axes[1, 0].set_title('GMM (Trained on Raw Data)')
+axes[1, 0].set_title('GMM (Trained on Standardized Data)')
 axes[1, 0].set_xlabel('PC1')
 axes[1, 0].set_ylabel('PC2')
 sns.scatterplot(x = X_PCA[:, 0], y = X_PCA[:, 1], hue = PCA_GMM, palette = 'magma', alpha = 0.6, ax = axes[1, 1])
@@ -364,7 +365,7 @@ plt.tight_layout()
 plt.show()
 
 print("\n\n> Clustering Quantitative Evaluation")
-printClusterMetrics("KMeans (Raw Data)", y, raw_Kmeans, X_scaled)
+printClusterMetrics("KMeans (Std Data)", y, raw_Kmeans, X_scaled)
 printClusterMetrics("KMeans (PCA Data)", y, PCA_Kmeans, X_PCA)
-printClusterMetrics("GMM (Raw Data)", y, raw_GMM, X_scaled)
+printClusterMetrics("GMM (Std Data)", y, raw_GMM, X_scaled)
 printClusterMetrics("GMM (PCA Data)", y, PCA_GMM, X_PCA)
