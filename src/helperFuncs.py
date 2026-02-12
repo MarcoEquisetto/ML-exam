@@ -1,6 +1,5 @@
-import matplotlib.pyplot as plt
+
 import numpy as np
-import seaborn as sns
 from sklearn.discriminant_analysis import StandardScaler
 from sklearn.metrics import adjusted_rand_score, classification_report, confusion_matrix, normalized_mutual_info_score, silhouette_score
 from sklearn.mixture import GaussianMixture
@@ -30,6 +29,8 @@ def outlierDetection(data, n_components = 3):
 
 
 def drawCorrelationMatrix(dataset):
+    import matplotlib.pyplot as plt
+    import seaborn as sns
     plt.figure(figsize = (12, 10))
     CM = dataset.corr(numeric_only = True).abs().style.background_gradient(axis = None, cmap = 'Reds')
     sns.heatmap(CM.data, annot = True, fmt = ".2f", cmap = 'Reds')
@@ -38,6 +39,7 @@ def drawCorrelationMatrix(dataset):
     return CM
 
 def plotQualityCheckGraph(scores, paramValues, bestHyperparameter, bestScore, modelName):
+    import matplotlib.pyplot as plt
     plt.figure(figsize = (10, 5))
     plt.plot(paramValues, scores, marker = 'o', markersize = 4, color = 'steelblue')
     plt.title(f'{modelName}: F1-Score vs. HyperParameter (Best = {bestHyperparameter})', fontsize = 14)
@@ -61,7 +63,8 @@ def printClusterMetrics(modelName, trueLabels, clusterLabel, clusteringData):
 
 
 def plotLogQualityCheckGraph(scores, params, bestHyperparameter, bestScore, modelName):
-    fig = plt.figure(figsize = (10, 5))
+    import matplotlib.pyplot as plt
+    plt.figure(figsize = (10, 5))
     
     plt.semilogx(params, scores, marker = 'o', markersize = 6, color = 'darkorange', linewidth = 2)
     
@@ -78,6 +81,7 @@ def plotLogQualityCheckGraph(scores, params, bestHyperparameter, bestScore, mode
 
 
 def plotKernelPerformanceComparison(results_dict, Cs):
+    import matplotlib.pyplot as plt
     plt.figure(figsize = (12, 6))
     
     markers = ['o', 's', '^', 'D', 'v', 'p']
@@ -100,6 +104,8 @@ def plotKernelPerformanceComparison(results_dict, Cs):
 
 
 def displayConfusionMatrix(y_true, y_pred, model_name, class_names=None):
+    import matplotlib.pyplot as plt
+    import seaborn as sns
     cm = confusion_matrix(y_true, y_pred)
     
     plt.figure(figsize = (8, 6))

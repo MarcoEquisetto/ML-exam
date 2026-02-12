@@ -1,8 +1,6 @@
 # Import common libraries 
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
 
 # Import models
 from sklearn.preprocessing import StandardScaler
@@ -19,13 +17,16 @@ from sklearn.cluster import KMeans
 from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.metrics import accuracy_score, precision_score, recall_score
 from sklearn.pipeline import make_pipeline
-from sklearn.tree import plot_tree
 from sklearn.model_selection import GridSearchCV
 
 # Custom helper functions
 from helperFuncs import drawCorrelationMatrix, plotKernelPerformanceComparison, plotQualityCheckGraph, printClusterMetrics, plotLogQualityCheckGraph, displayConfusionMatrix, outlierDetection
 
 def main():
+    import seaborn as sns
+    import matplotlib.pyplot as plt
+    from sklearn.tree import plot_tree
+
     randomState = 42
 
     # Hyperparameters max ranges
@@ -174,7 +175,7 @@ def main():
 
     ## Model Training and Evaluation
     print(f"\n\n> Model Training and Evaluation\n> Models to be implemented:\n1. KNeighborsClassifier\n2. RandomForestClassifier\n3. Support Vector Machine (SVM)\n4. Logistic Regression (with PCA)")
-
+    '''
     # KNN training
     Ks = range(1, maxK + 1)
     KNNcrossValidationScores = []
@@ -199,7 +200,7 @@ def main():
     print(f"Precision: {precision_score(y_test, predVal, average = 'macro'):.4f}")
     print(f"Recall: {recall_score(y_test, predVal, average = 'macro'):.4f}")
 
-
+    '''
     # RFC training 
     print(f"\n\n> Random Forest: Tuning multiple hyperparameters via GridSearchCV...")
 
@@ -213,7 +214,7 @@ def main():
 
     # Pipeline setup 
     rf_pipeline = make_pipeline(
-        RandomForestClassifier(random_state = randomState, class_weight = 'balanced', n_jobs = -1)
+        RandomForestClassifier(random_state = randomState, class_weight = 'balanced', n_jobs = 1)
     )
 
     # Setup GridSearchCV
