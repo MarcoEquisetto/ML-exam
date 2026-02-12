@@ -105,6 +105,12 @@ print(f"> Outliers removed. Final Shape: {dataset.shape}")
 
 # Check class distribution
 print(f"\n\n> Class distribution (percentage):\n{dataset['class'].value_counts(normalize=True).mul(100).round(2)}")
+plt.figure(figsize=(7, 7))
+class_counts = dataset['class'].value_counts()
+plt.pie(class_counts, labels=class_counts.index, autopct='%1.1f%%', startangle=140, colors=sns.color_palette('pastel'))
+plt.title('Class Distribution Imbalance', fontsize=15)
+plt.show()
+
 datasetMerge = dataset.melt(id_vars=['class'], var_name='variable', value_name='value')
 sns.displot(
     data=datasetMerge,
