@@ -17,8 +17,9 @@ from sklearn.cluster import KMeans
 
 # Import evaluation tools
 from sklearn.model_selection import cross_val_score, train_test_split
-from sklearn.metrics import f1_score, accuracy_score, precision_score, recall_score, confusion_matrix, ConfusionMatrixDisplay
+from sklearn.metrics import accuracy_score, precision_score, recall_score
 from sklearn.pipeline import make_pipeline
+from sklearn.tree import plot_tree
 
 # Custom helper functions
 from helperFuncs import drawCorrelationMatrix, plotKernelPerformanceComparison, plotQualityCheckGraph, printClusterMetrics, plotLogQualityCheckGraph, displayConfusionMatrix, outlierDetection
@@ -173,6 +174,7 @@ X_train_lin, X_test_lin, _, _ = train_test_split(X_linear, y, test_size=0.2, ran
 ## Model Training and Evaluation
 print(f"\n\n> Model Training and Evaluation\n> Models to be implemented:\n1. KNeighborsClassifier\n2. RandomForestClassifier\n3. Support Vector Machine (SVM)\n4. Logistic Regression (with PCA)")
 
+# KNN training
 Ks = range(1, maxK + 1)
 KNNcrossValidationScores = []
 print(f"\n\n> KNN training: evaluate KNNs with k ranging from 1 to {max(Ks)}")
@@ -197,7 +199,7 @@ print(f"Precision: {precision_score(y_test, predVal, average = 'macro'):.4f}")
 print(f"Recall: {recall_score(y_test, predVal, average = 'macro'):.4f}")
 
 
-
+# RFC training 
 estimators = range(50, maxEstimators + 1)
 print(f"\n\n> Random Forest training: evaluate RFCs with n_estimators ranging from 50 to {max(estimators)}")
 RFcrossValidationScores = []
@@ -216,6 +218,32 @@ predVal = bestRFCPipeline.predict(X_test_tree)
 
 plotQualityCheckGraph(RFcrossValidationScores, estimators, bestEstimator, max(RFcrossValidationScores), "RandomForestClassifier")
 displayConfusionMatrix(y_test, predVal, f"Best Random Forest (HP = {bestEstimator})")
+print("\n\n> Analyzing Feature Distribution in Random Forest...")
+rf_model = bestRFCPipeline.named_steps['randomforestclassifier']
+feature_names = X_train_tree.columns
+importances = rf_model.feature_importances_
+indices = np.argsort(importances)[::-1]
+plt.figure(figsize=(12, 6))
+plt.title("Feature Importance (Closer to Root = Higher Score)")
+plt.bar(range(X_train_tree.shape[1]), importances[indices], align="center", color='steelblue')
+plt.xticks(range(X_train_tree.shape[1]), [feature_names[i] for i in indices], rotation=45)
+plt.ylabel('Importance Score (Gini Impurity Decrease)')
+plt.grid(axis='y', alpha=0.3)
+plt.tight_layout()
+plt.show()
+
+plt.figure(figsize=(20, 10))
+plot_tree(rf_model.estimators_[0], 
+          feature_names = feature_names,
+          class_names = [str(c) for c in LE.classes_],
+          filled = True, 
+          rounded = True, 
+          max_depth = 3,
+          fontsize = 10)
+plt.title("Top 3 Levels of the First Decision Tree (Root Distribution)")
+plt.show()
+
+print(f"> Most important feature (Root Candidate): {feature_names[indices[0]]}")
 
 print(f"Accuracy: {accuracy_score(y_test, predVal):.4f}")
 print(f"Precision: {precision_score(y_test, predVal, average = 'macro'):.4f}")
@@ -223,6 +251,7 @@ print(f"Recall: {recall_score(y_test, predVal, average = 'macro'):.4f}")
 
 
 
+# SVM training
 sampleIndex = np.random.choice(X_train_lin.index, size=int(len(X_train_lin) * 0.1), replace = False)
 Xsplit = X_train_lin.loc[sampleIndex]
 ysplit = y_train.loc[sampleIndex]
@@ -266,6 +295,7 @@ print(f"Precision: {precision_score(y_test, predVal, average = 'macro'):.4f}")
 print(f"Recall: {recall_score(y_test, predVal, average = 'macro'):.4f}")
 
 
+# LR training with PCA
 LR_Cs = [0.001, 0.01, 0.1, 1, 10, 100]
 LRcrossValidationScores = []
 
