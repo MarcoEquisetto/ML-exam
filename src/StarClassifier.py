@@ -175,7 +175,7 @@ def main():
 
     ## Model Training and Evaluation
     print(f"\n\n> Model Training and Evaluation\n> Models to be implemented:\n1. KNeighborsClassifier\n2. RandomForestClassifier\n3. Support Vector Machine (SVM)\n4. Logistic Regression (with PCA)")
-    '''
+    
     # KNN training
     Ks = range(1, maxK + 1)
     KNNcrossValidationScores = []
@@ -200,7 +200,7 @@ def main():
     print(f"Precision: {precision_score(y_test, predVal, average = 'macro'):.4f}")
     print(f"Recall: {recall_score(y_test, predVal, average = 'macro'):.4f}")
 
-    '''
+
     # RFC training 
     print(f"\n\n> Random Forest: Tuning multiple hyperparameters via GridSearchCV...")
 
