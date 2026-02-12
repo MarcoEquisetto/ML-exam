@@ -20,6 +20,7 @@ from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.metrics import accuracy_score, precision_score, recall_score
 from sklearn.pipeline import make_pipeline
 from sklearn.tree import plot_tree
+from sklearn.model_selection import GridSearchCV
 
 # Custom helper functions
 from helperFuncs import drawCorrelationMatrix, plotKernelPerformanceComparison, plotQualityCheckGraph, printClusterMetrics, plotLogQualityCheckGraph, displayConfusionMatrix, outlierDetection
@@ -142,7 +143,7 @@ print(f"\n\n> Feature correlation analysis")
 CM = drawCorrelationMatrix(dataset)
 
 print(f"\n\n> Generating Model-Specific Feature Sets...")
-# 1. Create Engineered Features
+# Create Engineered Features
 dataset['u_g'] = dataset['u'] - dataset['g']
 dataset['g_r'] = dataset['g'] - dataset['r']
 dataset['r_i'] = dataset['r'] - dataset['i']
@@ -200,59 +201,82 @@ print(f"Recall: {recall_score(y_test, predVal, average = 'macro'):.4f}")
 
 
 # RFC training 
-estimators = range(50, maxEstimators + 1)
-print(f"\n\n> Random Forest training: evaluate RFCs with n_estimators ranging from 50 to {max(estimators)}")
-RFcrossValidationScores = []
-for n_estimators in estimators:
-    pipeline = make_pipeline(RandomForestClassifier(n_estimators = n_estimators, random_state = randomState, class_weight = 'balanced', n_jobs=-1))
-    scores = cross_val_score(pipeline, X_train_tree, y_train, cv = 5, scoring = 'f1_macro')
-    RFcrossValidationScores.append(scores.mean())
-    print(f"> n_estimators = {n_estimators}, F1-score (mean of batch) = {scores.mean():.4f}")
+print(f"\n\n> Random Forest: Tuning multiple hyperparameters via GridSearchCV...")
 
-bestEstimator = estimators[np.argmax(RFcrossValidationScores)]
-print(f"\n> Best n_estimators for RF: {bestEstimator}. Retraining...")
+# Define the Parameter Grid
+param_grid = {
+    'randomforestclassifier__n_estimators': [50, 150],          # Number of trees (Stable baseline)
+    'randomforestclassifier__max_depth': [None, 10, 20],        # Controls complexity/overfitting
+    'randomforestclassifier__min_samples_split': [2, 5, 10],    # Min samples needed to split a node
+    'randomforestclassifier__min_samples_leaf': [1, 3, 5],      # Min samples required at a leaf node
+}
 
-bestRFCPipeline = make_pipeline(RandomForestClassifier(n_estimators = bestEstimator, random_state = randomState, class_weight = 'balanced', n_jobs=-1))
-bestRFCPipeline.fit(X_train_tree, y_train)
+# Pipeline setup 
+rf_pipeline = make_pipeline(
+    RandomForestClassifier(random_state=randomState, class_weight='balanced', n_jobs=-1)
+)
+
+# Setup GridSearchCV
+grid_search = GridSearchCV(
+    rf_pipeline,
+    param_grid,
+    cv = 5,
+    scoring = 'f1_macro',
+    n_jobs = 1,
+    verbose = 1
+)
+
+# Fit grid 
+grid_search.fit(X_train_tree, y_train)
+
+# Extract best model and results
+bestRFCPipeline = grid_search.best_estimator_
+best_params = grid_search.best_params_
+print(f"\n> Best Parameters Found:\n{best_params}")
+print(f"> Best Cross-Validation F1 Score: {grid_search.best_score_:.4f}")
+
+# Evaluate on Test set
 predVal = bestRFCPipeline.predict(X_test_tree)
 
-plotQualityCheckGraph(RFcrossValidationScores, estimators, bestEstimator, max(RFcrossValidationScores), "RandomForestClassifier")
-displayConfusionMatrix(y_test, predVal, f"Best Random Forest (HP = {bestEstimator})")
-print("\n\n> Analyzing Feature Distribution in Random Forest...")
+displayConfusionMatrix(y_test, predVal, f"Best Random Forest (Grid Search)")
+
+print(f"Accuracy: {accuracy_score(y_test, predVal):.4f}")
+print(f"Precision: {precision_score(y_test, predVal, average='macro'):.4f}")
+print(f"Recall: {recall_score(y_test, predVal, average='macro'):.4f}")
+
+print("\n> Analyzing Feature Distribution in Optimized Random Forest...")
 rf_model = bestRFCPipeline.named_steps['randomforestclassifier']
 feature_names = X_train_tree.columns
+
+# Feature Importance Plot
 importances = rf_model.feature_importances_
 indices = np.argsort(importances)[::-1]
+
 plt.figure(figsize=(12, 6))
 plt.title("Feature Importance (Closer to Root = Higher Score)")
 plt.bar(range(X_train_tree.shape[1]), importances[indices], align="center", color='steelblue')
 plt.xticks(range(X_train_tree.shape[1]), [feature_names[i] for i in indices], rotation=45)
-plt.ylabel('Importance Score (Gini Impurity Decrease)')
+plt.ylabel('Importance Score')
 plt.grid(axis='y', alpha=0.3)
 plt.tight_layout()
 plt.show()
 
+# Tree Structure Plot (Top 3 Levels)
 plt.figure(figsize=(20, 10))
 plot_tree(rf_model.estimators_[0], 
           feature_names = feature_names,
-          class_names = [str(c) for c in LE.classes_],
+          class_names = [str(c) for c in LE.classes_], 
           filled = True, 
           rounded = True, 
-          max_depth = 3,
+          max_depth = 3,    
           fontsize = 10)
-plt.title("Top 3 Levels of the First Decision Tree (Root Distribution)")
+plt.title(f"Optimized Tree Structure (Max Depth: {best_params['randomforestclassifier__max_depth']})")
 plt.show()
-
-print(f"> Most important feature (Root Candidate): {feature_names[indices[0]]}")
-
-print(f"Accuracy: {accuracy_score(y_test, predVal):.4f}")
-print(f"Precision: {precision_score(y_test, predVal, average = 'macro'):.4f}")
-print(f"Recall: {recall_score(y_test, predVal, average = 'macro'):.4f}")
 
 
 
 # SVM training
-sampleIndex = np.random.choice(X_train_lin.index, size=int(len(X_train_lin) * 0.1), replace = False)
+sampleIndex = np.random.choice(X_train_lin.index, size = int(len(X_train_lin) * 0.1), replace = False)
 Xsplit = X_train_lin.loc[sampleIndex]
 ysplit = y_train.loc[sampleIndex]
 print(f"\n> Tuning SVM on subset of {len(Xsplit)} rows...")
