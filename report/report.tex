@@ -19,7 +19,7 @@
     linkcolor=blue,
     citecolor=blue,
     urlcolor=blue,
-    pdftitle={Star Classification, Regression and Clustering: A Comparative Analysis},
+    pdftitle={Star Classification and Clustering: A Comparative Analysis},
     pdfauthor={Marco Equisetto}
 }
 
@@ -46,7 +46,7 @@
 \setcounter{bottomnumber}{2}          
 \setcounter{totalnumber}{4}           
 
-\title{\textbf{Star Classification, Regression and Clustering: A Comparative Analysis} \\
+\title{\textbf{Star Classification and Clustering: A Comparative Analysis} \\
        \large Machine Learning Project, Academic Year 2025/2026 \\
        }
 \author{Marco Equisetto\\VR535007}
@@ -58,7 +58,7 @@
 
 \begin{abstract}
 \noindent
-This report presents an in-depth analysis of the Star Classification dataset, comparing the performance of multiple supervised and unsupervised models: it investigates how data preprocessing heavily impacts model outcomes and explores how different techniques can be combined to leverage their respective strengths.\\Four distinct supervised learning models are evaluated: \textbf{K-Nearest Neighbors} (\textbf{KNN}), \textbf{Random Forest Classifier} (\textbf{RFC}), \textbf{Support Vector Machines} (\textbf{SVM}), and \textbf{Logistic Regression} (\textbf{LR}). Additionally, unsupervised learning techniques, specifically \textbf{K-Means} and \textbf{Gaussian Mixture Model} (\textbf{GMM}), are employed to explore the intrinsic topological nature of the astronomical data. Model performance is primarily evaluated using the F1-score, with the addition of accuracy, precision and recall for classification tasks, while Adjusted Rand Index (ARI), Normalized Mutual Info (NMI) and Silhouette Coefficient are utilized for clustering validation.
+This report presents an in-depth analysis of the Star Classification dataset, comparing the performance of multiple supervised and unsupervised models: it investigates how data preprocessing heavily impacts model outcomes and explores how different techniques can be combined to leverage their respective strengths.\\Three distinct supervised learning models are evaluated: \textbf{K-Nearest Neighbors} (\textbf{KNN}), \textbf{Random Forest Classifier} (\textbf{RFC}) and \textbf{Support Vector Machines} (\textbf{SVM}). Additionally, unsupervised learning techniques, specifically \textbf{K-Means} and \textbf{Gaussian Mixture Model} (\textbf{GMM}), are employed to explore the intrinsic topological nature of the astronomical data. Model performance is primarily evaluated using the F1-score, with the addition of accuracy, precision and recall for classification tasks, while Adjusted Rand Index (ARI), Normalized Mutual Info (NMI) and Silhouette Coefficient are utilized for clustering validation.
 \end{abstract}
 
 \tableofcontents
@@ -89,7 +89,7 @@ Astronomical classification has traditionally relied on the \textit{Morgan-Keena
 The primary objective of this project is to develop a robust machine learning pipeline for celestial object classification and to find out which of the tested models best fits the task at hand. Specific objectives include:
 \begin{enumerate}
     \item \textbf{Data Preprocessing:} To implement effective outlier removal, balancing and feature engineering (calculating color indices like $u-g$) to improve model separability and to remove problematic noisy features such as position based features (namely $alpha$ and $delta$).
-    \item \textbf{Supervised Comparison:} To evaluate and tune hyperparameters for KNN, Random Forest, SVM, and Logistic Regression to find the best performing one for each of them.
+    \item \textbf{Supervised Comparison:} To evaluate and tune hyperparameters for KNN, Random Forest, and SVM to find the best performing one for each of them.
     \item \textbf{Unsupervised Exploration:} To analyze the dataset using Clustering (K-Means, GMM) and assess the impact of Principal Component Analysis (PCA) on clustering performance.
 \end{enumerate}
 
@@ -130,7 +130,7 @@ Since the target label for classification was categorical (it being a string wit
 
 \subsubsection{Balancing}
 When considering whether the dataset needed balancing or not, the distribution of classes was analyzed: its result can be visualized in Figure [\ref{fig:piechart}].
-These charts show that, even though there technically is an imbalance of representation, it is not strong enough to require direct action on the dataset itself. Utilizing the $class\_weight$ flag in models that contain it (such as RFC, SVM and LR) will suffice to ensure each of them follows its own procedure to balance data.
+These charts show that, even though there technically is an imbalance of representation, it is not strong enough to require direct action on the dataset itself. Utilizing the $class\_weight$ flag in models that contain it (such as RFC and SVM) will suffice to ensure each of them follows its own procedure to balance data.
 As for the KNN model, since it can handle slight imbalance in a rather optimal way, no invasive balancing of the dataset felt strictly necessary.
 
 \begin{figure}[htbp]
@@ -145,10 +145,10 @@ The features of this dataset followed distributions that can be seen in Figure [
 Based on correlation analysis, which was prompted by some of the implemented method's dire need of correlation-free environments to work at their best, said features produced the correlation matrix shown in Figure [\ref{fig:correlationMatrix1}], which implied some action needed to be taken to fix the high correlation between them.\\Instead of deleting all highly correlated features right away, a different approach was considered, which was to duplicate the dataset and create the two following versions:
 \begin{itemize}
     \item \textbf{Tree-Based Set ($X_{tree}$):} Retains both raw magnitudes ($u, g, r, i, z$) and synthetic color indices (used for RFC)
-    \item \textbf{Linear-Model Set ($X_{linear}$):} Drops the raw magnitudes and retains \textbf{only} the synthetic color indices to reduce multicollinearity (used for KNN, SVM, LR, and clustering).
+    \item \textbf{Linear-Model Set ($X_{linear}$):} Drops the raw magnitudes and retains \textbf{only} the synthetic color indices to reduce multicollinearity (used for KNN, SVM and clustering).
 \end{itemize}
 
-This decision was taken because while models like KNN, SVM and LR and clustering approaches see their performance hindered by correlated features, and in their case those need to be removed, RFC is effectively immune to such an even and therefore can benefit from both keeping the original features and introducing new information on top of it.
+This decision was taken because while models like KNN, SVM and clustering approaches see their performance hindered by correlated features, and in their case those need to be removed, RFC is effectively immune to such an even and therefore can benefit from both keeping the original features and introducing new information on top of it.
 Correlation between the newly added features was evaluated and its result is seen in Figure [\ref{fig:correlationMatrix2}].
 
 \begin{figure}[htbp]
@@ -197,7 +197,6 @@ The following supervised models were implemented using \textbf{5-Fold Cross-Vali
     \end{itemize}
     \item \textbf{Support Vector Machine (SVM):} Trained on the $X_{linear}$ dataset with 
     $class\_weight='balanced'$. Due to the high computational cost of SVMs ($O(n^3)$), hyperparameter tuning was performed on a random \textbf{10\% subset} of the training data. The model was tuned for regularization $C \in [0.001, 0.01, 0.1, 1, 10, 100]$ and kernel type $kernel \in ['rbf', 'linear', 'sigmoid']$. The best configuration was then retrained on the full dataset.
-    \item \textbf{Logistic Regression:} Trained on the $X_{linear}$ dataset with `class\_weight='balanced'`. To further address the multicollinearity observed in the feature analysis, the pipeline included a \textbf{PCA} step (preserving 95\% variance) prior to the classifier. The model was tuned for regularization strength $C \in [0.001, 0.01, 0.1, 1, 10, 100]$.
 \end{itemize}
 For unsupervised learning, \textbf{K-Means} and \textbf{Gaussian Mixture Models (GMM)} were utilized with $k=3$ (or $n\_components=3$) to match the known number of classes. To test the hypothesis that dimensionality reduction aids cluster separation, both models were trained on two distinct versions of the data:
 \begin{enumerate}
@@ -331,31 +330,6 @@ The confusion matrix of SVM with $kernel=rbf, C=10$ can be seen in Figure [\ref{
 \end{figure}
 
 
-\subsubsection{Logistic Regression}
-The LR model was chosen for its probabilistic nature, applying the $'sigmoid'$ (logistic) function to a linear combination of features, mapping the output to a probability between 0 and 1. Another reason is how sensitive to feature scaling this model is, which gave the chance to show why a \textit{StandardScaler} was included within its training pipeline \cite{lectures}. Lastly, it was included for its efficiency on large datasets and its feature interpretability, being able to indicate which color magnitudes or synthetic features are the most significant predictors for a specific type of celestial object through its coefficients.\\Training loop is seen in Figure [\ref{fig:LRtraining}].
-Even though Logistic Regression was promising on paper, it ended up performing well below the average of its competitors, as data is not linearly separable and it struggles to capture complex, non-linear relationships between astronomical features. On top of that, despite the initial outlier removal, Logistic Regression remains more sensitive to extreme values or noise in the spectral data than a robust ensemble method like Random Forest. Here are the evaluation metrics relative to the best Logistic Regression instance that was retrained, that is the one with $C=1$:
-\begin{itemize}
-    \item F1-Score: 0.6116
-    \item Accuracy: 0.6562
-    \item Precision: 0.6004
-    \item Recall: 0.6487
-\end{itemize}
-The confusion matrix of the Logistic Regression model with $C=1$ is displayed in Figure [\ref{fig:confusionMatrixLR}].
-
-\begin{figure}[htbp]
-    \centering
-    \includegraphics[width=1\textwidth]{img/LR_performance.png}
-    \caption{\textbf{Performance of LR}: Comparison cycling through the $C$ values.}
-    \label{fig:LRtraining}
-\end{figure}
-
-\begin{figure}[htbp]
-    \centering
-    \includegraphics[width=0.7\textwidth]{img/LR_confm.png}
-    \caption{\textbf{Confusion Matrix}: This matrix shows how good the LR model was at categorizing objects.}
-    \label{fig:confusionMatrixLR}
-\end{figure}
-
 
 
 \subsubsection{Final Metrics}
@@ -368,16 +342,15 @@ From the analysis that was conducted, out of all the models that were trained an
         \toprule
         \textbf{Model} & \textbf{Accuracy} & \textbf{Precision (Macro)} & \textbf{Recall (Macro)} & \textbf{F1 (Macro)} \\
         \midrule
-        \textbf{KNN} & \textbf{0.8736} & \textbf{0.8482} & \textbf{0.8312} & \textbf{0.8341} \\
-        Random Forest & 0.8696 & 0.8428 & 0.8260 & 0.8306 \\
-        SVM & 0.8653 & 0.8427 & 0.8162 & 0.8129 \\
-        Logistic Regression & 0.7416 & 0.6595 & 0.6350 & 0.6185 \\
+        KNN & 0.8736 & 0.8482 & 0.8312 & 0.8341 \\
+        \textbf{Random Forest} & \textbf{0.8887} & \textbf{0.8594} & \textbf{0.8565} & \textbf{0.8583} \\
+        SVM & 0.8501 & 0.8087 & 0.8345 & 0.8099 \\
         \bottomrule
     \end{tabular}
     \label{tab:results}
 \end{table}
 
-\newpage
+
 \subsection{Clustering Analysis}
 Clustering performance was evaluated by comparing models trained on high-dimensional scaled data against those trained on a two-dimensional PCA projection. This comparison highlights a significant trade-off: while dimensionality reduction simplifies the feature space and does, in some way, help models produce a higher quality result, it does not inherently make the data more clusterable.\\A final table was compiled, listing all the obtained evaluation metric results, which is available at Table [\ref{tab:resultscomparison}].
 
@@ -403,32 +376,30 @@ Clustering performance was evaluated by comparing models trained on high-dimensi
     \label{tab:resultscomparison}
 \end{table}
 
-As illustrated in Figure [\ref{fig:clusteringPerformance}], PCA significantly improved the Silhouette Score for both models, increasing from $0.3558$ to $0.4322$ for K-Means and from a poor $0.1565$ to $0.3862$ for GMM. This indicates that PCA successfully filtered out noise, creating more defined and separable spatial groupings. However, quantitative metrics reveal that this spatial clarity did not translate to meaningful classification: 
+As illustrated in Figure [\ref{fig:clusteringPerformance}], PCA significantly improved the Silhouette Score for both models clustering models. This indicates that PCA successfully filtered out noise, creating more defined and separable spatial groupings. However, quantitative metrics reveal that this spatial clarity did not translate to meaningful classification: 
 \begin{itemize} 
     \item \textbf{Weak Ground-Truth Alignment}: The Adjusted Rand Index (ARI) remained extremely low across all configurations, peaking at only $0.1129$ for K-Means on PCA data. This suggests that the natural clusters formed by the algorithms have very little overlap with the actual \textit{GALAXY, STAR,} and \textit{QSO} labels.
-    \item \textbf{Information Loss in GMM}: Interestingly, while GMM's Silhouette score improved with PCA, its ARI actually dropped from $0.0990$ to $0.0652$. This indicates that the Gaussian components in the reduced 2D space lost critical density information present in the original feature set.
+    \item \textbf{Information Loss in GMM}: Interestingly, while GMM's Silhouette score improved with PCA, its ARI actually dropped from $0.0990$ to $0.0652$. This indicates that the Gaussian components in the reduced 2D space lost useful density information present in the original feature set.
     \item \textbf{Conclusion on Viability}: With Normalized Mutual Info (NMI) values hovering below $0.20$, these features, even when optimized via PCA, are insufficient for unsupervised discovery of star classes. The data appears to not exist in discrete, well-separated density clusters.
 \end{itemize}
 
 
 \section{Conclusion}
 \label{sec:conclusions}
-
 This project set out to evaluate the performance of supervised and unsupervised machine learning models on the task of celestial object classification. A critical component of this study was the deliberate exclusion of the \textit{redshift} feature, forcing the models to rely solely on photometric color indices and reference magnitudes.
 
 \subsection{Supervised Learning Synthesis}
-The results demonstrate that while \textit{redshift} is the strongest predictor for cosmological classification, it is not strictly necessary for achieving reasonable accuracy.
+The results demonstrate that while \textit{redshift} is the strongest predictor for cosmological classification, it is not strictly necessary for achieving reasonable accuracy in a controlled, machine learning context.
 \begin{itemize}
-    \item \textbf{Non-Linearity:} The \textbf{K-Nearest Neighbors (KNN)} classifier ($F1=0.8341$) and \textbf{Random Forest} ($F1=0.8306$) outperformed the linear models. This confirms that the decision boundaries between Stars, Galaxies, and Quasars in color space ($u-g$, $g-r$, etc.) are highly non-linear and complex.
-    \item \textbf{The Failure of Linear Models:} \textbf{Logistic Regression} performed significantly worse ($F1=0.6185$), proving that celestial classes cannot be separated by simple hyperplanes when limited to photometric data.
-    \item \textbf{Robustness:} KNN proved to be the most efficient balance of training time and accuracy, likely because the density of similar stellar objects in color space is high.
+    \item \textbf{Non-Linearity:} The fact that \textbf{K-Nearest Neighbors (KNN)} classifier and \textbf{Random Forest} outperformed the linear configurations of the SVM model confirms that the decision boundaries between Stars, Galaxies, and Quasars in color space ($u-g$, $g-r$, etc.) are highly non-linear and complex.
+    \item \textbf{Robustness:} Although RFC does require more training time and computational expenses, it is by far the most reliable, robust and rewarding model out of the ones that were considered in this project: it is able to efficiently reach satisfactory solutions in terms of accuracy and does not overfit data.
 \end{itemize}
 
 \subsection{Unsupervised Learning Considerations}
-The clustering analysis provided a crucial negative result. Despite the application of PCA to reduce noise, neither \textbf{K-Means} nor \textbf{GMM} performed well (ARI $< 0.12$). This suggests that in the photometric feature space, Stars, Galaxies, and Quasars do not form distinct, separated blobs. Instead, they likely exist on a space where classes overlap significantly. This finding highlights the necessity of labeled data (Supervised Learning) for this specific astronomical task.
+The clustering analysis provided a crucial negative result. Despite the application of PCA to reduce noise, neither \textbf{K-Means} nor \textbf{GMM} performed well. This suggests that in the photometric feature space, Stars, Galaxies, and Quasars do not form distinct, separated blobs. Instead, they likely exist on a space where classes overlap significantly. This finding highlights the necessity of labeled data (Supervised Learning) for this specific astronomical task.
 
 \subsection{Possible Future Enhancements}
-While the removal of redshift provided a challenging testbed for these algorithms, modern astronomical surveys often require higher precision. Future iterations of this work could explore the use of \textbf{Hierarchical Classification}, which separate Stars from Extragalactic objects first, then classifying Galaxies and Quasars, or \textbf{Deep Learning on Raw Spectra}, which utilizes Neural Networks on the raw spectral data rather than extracted tabular features to capture feature subtleties invisible to standard photometry. In conclusion, while it is possible to apply simple classification, the distribution of the data makes it impossible to employ rudimentary clustering methods expecting a very precise outcome.
+While the removal of redshift provided a challenging testbed for these algorithms, modern astronomical surveys often require high precision. Future iterations of this work could explore the use of \textbf{Hierarchical Classification}, which separate Stars from Extragalactic objects first, then classifying Galaxies and Quasars, or \textbf{Deep Learning on Raw Spectra}, which utilizes Neural Networks on the raw spectral data rather than extracted tabular features to capture feature subtleties invisible to standard photometry. In conclusion, while it is possible to apply simple classification, the distribution of the data makes it impossible to employ rudimentary clustering methods expecting a very precise outcome.
 
 \begin{thebibliography}{9}
 \label{sec:refs}

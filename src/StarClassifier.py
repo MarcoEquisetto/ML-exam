@@ -8,7 +8,6 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
-from sklearn.linear_model import LogisticRegression
 from sklearn.decomposition import PCA
 from sklearn.mixture import GaussianMixture
 from sklearn.cluster import KMeans
@@ -20,7 +19,7 @@ from sklearn.pipeline import make_pipeline
 from sklearn.model_selection import GridSearchCV
 
 # Custom helper functions
-from helperFuncs import drawCorrelationMatrix, plotKernelPerformanceComparison, plotQualityCheckGraph, printClusterMetrics, plotLogQualityCheckGraph, displayConfusionMatrix, outlierDetection
+from helperFuncs import drawCorrelationMatrix, plotKernelPerformanceComparison, plotQualityCheckGraph, printClusterMetrics, displayConfusionMatrix, outlierDetection
 
 def main():
     import seaborn as sns
@@ -174,7 +173,7 @@ def main():
 
 
     ## Model Training and Evaluation
-    print(f"\n\n> Model Training and Evaluation\n> Models to be implemented:\n1. KNeighborsClassifier\n2. RandomForestClassifier\n3. Support Vector Machine (SVM)\n4. Logistic Regression (with PCA)")
+    print(f"\n\n> Model Training and Evaluation\n> Models to be implemented:\n1. KNeighborsClassifier\n2. RandomForestClassifier\n3. Support Vector Machine (SVM)")
     
     # KNN training
     Ks = range(1, maxK + 1)
@@ -315,40 +314,6 @@ def main():
     predVal = bestSVCPipeline.predict(X_test_lin)
 
     displayConfusionMatrix(y_test, predVal, f"Best SVM (HP = C={bestC}, kernel={bestKernel})")
-
-    print(f"Accuracy: {accuracy_score(y_test, predVal):.4f}")
-    print(f"Precision: {precision_score(y_test, predVal, average = 'macro'):.4f}")
-    print(f"Recall: {recall_score(y_test, predVal, average = 'macro'):.4f}")
-
-
-    # LR training with PCA
-    LR_Cs = [0.001, 0.01, 0.1, 1, 10, 100]
-    LRcrossValidationScores = []
-
-    print(f"\n\n> Logistic Regression (with PCA) training: evaluate LRs with C ranging inside {LR_Cs}")
-    for C in LR_Cs:
-        LRPipeline = make_pipeline(
-            StandardScaler(), 
-            PCA(n_components=0.95, random_state=randomState), 
-            LogisticRegression(C = C, random_state = randomState, max_iter = 1000, class_weight = 'balanced')
-        )
-        scores = cross_val_score(LRPipeline, X_train_lin, y_train, cv = 5, scoring = 'f1_macro')
-        LRcrossValidationScores.append(scores.mean())
-        print(f"> C = {C}, F1-score (mean of batch) = {scores.mean():.4f}")
-
-    bestLR_C = LR_Cs[np.argmax(LRcrossValidationScores)]
-    print(f"\n> Best Logistic Regression C: {bestLR_C}. Retraining...")
-
-    bestLRPipeline = make_pipeline(
-        StandardScaler(), 
-        PCA(n_components=0.95, random_state=randomState),
-        LogisticRegression(C = bestLR_C, random_state = randomState, max_iter = 1000, class_weight = 'balanced')
-    )
-    bestLRPipeline.fit(X_train_lin, y_train)
-    predVal = bestLRPipeline.predict(X_test_lin)
-
-    plotLogQualityCheckGraph(LRcrossValidationScores, LR_Cs, bestLR_C, max(LRcrossValidationScores), "Logistic Regression (with PCA)")
-    displayConfusionMatrix(y_test, predVal, f"Best Logistic Regression (C = {bestLR_C})")
 
     print(f"Accuracy: {accuracy_score(y_test, predVal):.4f}")
     print(f"Precision: {precision_score(y_test, predVal, average = 'macro'):.4f}")
