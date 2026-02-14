@@ -52,3 +52,5 @@ Exchanged LinearSVC for SVC with rbf kernel to test if non linearly separable da
 'alpha' and 'delta' features dropped by default because they are position features, which do not help classification at all and might hinder performance introducing noise
 
 Added testing on raw features to show performance on them and motivate the choice to implement feature engineering
+
+Decided to keep project only to Classification and Clustering, excuding regression
