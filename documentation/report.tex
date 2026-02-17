@@ -73,7 +73,7 @@ The classification of celestial objects is a fundamental task in modern astrophy
 
 \section{Motivation and Rationale}
 \label{sec:motivation}
-This project addresses the problem of classifying objects from the Sloan Digital Sky Survey (SDSS) \cite{sdss_paper} into three distinct classes: \textbf{Galaxies}, \textbf{Stars}, and \textbf{Quasars}. The rationale behind this work is to compare the efficacy of distance-based, ensemble, and linear models in handling astronomical data, which is often characterized by high dimensionality, considerable size and high levels of noise. Most of the currently employed models rely on classifying bodies by redshift and spectral indexes. This project turned such a task into one that relies \textbf{solely on color and emitted light}.
+This project addresses the problem of classifying objects from the Sloan Digital Sky Survey (SDSS) \cite{sdss_paper} into three distinct classes: \textbf{Galaxies}, \textbf{Stars}, and \textbf{Quasars}. The rationale behind this work is to compare the efficacy of distance-based and ensemble models in handling astronomical data, which is often characterized by high dimensionality, considerable size and high levels of noise. Most of the currently employed models rely on classifying bodies by redshift and spectral indexes. This project turned such a task into one that relies \textbf{solely on color and emitted light}.
 
 
 \section{State of the Art}
@@ -240,15 +240,20 @@ Cross-validation was used to find the optimal hyperparameters by training loops:
 
 \subsubsection{K-Nearest Neighbor Classifier}
 The choice to explore the implementation of the KNN model came from how simple and straight forward it is and from how well it scales, training wise, with iteration on hyperparameter values: since it only requires one, iteration to decide its best value is efficient \cite{geron}. It also works well with data that is assumed to be distributed in a way that renders similar data points in close proximity to each other, which looked to be the case when performing the analysis of Figure [\ref{fig:outliers_IQR_GMM}]. Training loop result can be seen in Figure [\ref{fig:KNNtraining}].
-Having obtained the best value for K, a new KNN model was trained specifically with this hyperparameter value to show evaluation metrics on the best version of KNN obtainable on this dataset. The obtained performance metrics were:
-\begin{itemize}
-    \item F1-Score: 0.8341
-    \item Accuracy: 0.8736
-    \item Precision: 0.8482
-    \item Recall: 0.8312
-\end{itemize}
-The confusion matrix of KNN with $n\_neighbors = 37$ can be seen in Figure [\ref{fig:confusionMatrixKNN}].
+Having obtained the best value for K, a new KNN model was trained specifically with this hyperparameter value to show evaluation metrics on the best version of KNN obtainable on this dataset. The obtained performance metrics were the ones in Table [\ref{tab:knnPerformance}].The confusion matrix of KNN with $n\_neighbors = 37$ can be seen in Figure [\ref{fig:confusionMatrixKNN}].
 
+\begin{table}[H]
+    \centering
+    \caption{KNN Performance Scores}
+    \begin{tabular}{lcccc}
+        \toprule
+        \textbf{F1-Score} & \textbf{Accuracy} & \textbf{Precision} & \textbf{Recall} \\
+        \midrule
+        0.8341 & 0.8736 & 0.8482 & 0.8312 \\
+        \bottomrule
+    \end{tabular}
+    \label{tab:knnPerformance}
+\end{table}
 
 \begin{figure}[htbp]
     \centering
@@ -276,15 +281,20 @@ The grid search identified the optimal hyperparameters, favoring a balance betwe
 The graph at Figure [\ref{fig:RFC_feature_importance}] shows the feature importance, that is how much information gain was provided by each feature: the higher the bar is, the more that feature helped RFC separate data (these are the features that are higher up in the trees, closer to the root). The features on the lower end are those who were used primarily for tie-braking deep down the trees, mostly helping to refine special edge cases.
 An in-depth visualization of this concept was provided in Figure [\ref{fig:optimizedTree}].
 
-With the best hyperparameter configuration found by the grid search being: $max\_depth = 20$,  $min\_samples\_leaf = 3$, $min\_samples\_split = 2$, $n\_estimators = 150$. 
-the specific optimally configurated model, when trained in isolation, produced the following evaluation metrics:
-\begin{itemize}
-    \item F1-Score: 0.8583
-    \item Accuracy: 0.8887
-    \item Precision: 0.8594
-    \item Recall: 0.8565
-\end{itemize}
-The confusion matrix of RFC with $n\_estimators = 150$ can be seen in Figure [\ref{fig:confusionMatrixRFC}].
+With the best hyperparameter configuration found by the grid search being: $max\_depth = 20$,  $min\_samples\_leaf = 3$, $min\_samples\_split = 2$, $n\_estimators = 150$. The specific optimally configurated model, when trained in isolation, produced the following evaluation metrics can be seen in Table [\ref{tab:rfcPerformance}]. The confusion matrix of RFC with $n\_estimators = 150$ can be seen in Figure [\ref{fig:confusionMatrixRFC}].
+
+\begin{table}[H]
+    \centering
+    \caption{RFC Performance Scores}
+    \begin{tabular}{lcccc}
+        \toprule
+        \textbf{F1-Score} & \textbf{Accuracy} & \textbf{Precision} & \textbf{Recall} \\
+        \midrule
+        0.8583 & 0.8887 & 0.8594 & 0.8565 \\
+        \bottomrule
+    \end{tabular}
+    \label{tab:rfcPerformance}
+\end{table}
 
 \begin{figure}[htbp]
     \begin{subfigure}[b]{0.48\textwidth}
@@ -314,15 +324,20 @@ The confusion matrix of RFC with $n\_estimators = 150$ can be seen in Figure [\r
 
 \subsubsection{Support Vector Machines}
 SVM models have a double degree of freedom: different kernel modes and hyperparameter value. Performance and how well it can find an optimal hyperplane to separate classes in an n-dimensional space hugely vary based on them. Due to the high computational cost of training SVMs on large datasets, hyperparameter tuning was performed on a random 10\% subset of the training data. The best performing configuration found on the subset was then used to retrain the model on the full training dataset. The train loop for this model is displayed in Figure [\ref{fig:SVMtraining}].
-It is apparent the best performing mode was $'rbf'$, which is the expected result: this indirectly confirms that the data is not linearly separable and therefore a linear kernel mode could have never performed well enough to surpass its competitors. RBF has the highest performance because it can sort of bend the separation line around data, better fitting the separation and achieving a higher precision and accuracy.\\The statistics that follow are the ones obtained by training a SVM with kernel mode 'rbf' and with $C = 10$:
-\begin{itemize}
-    \item F1-Score: 0.8092
-    \item Accuracy: 0.8501
-    \item Precision: 0.8087
-    \item Recall: 0.8345
-\end{itemize}
-The confusion matrix of SVM with $kernel=rbf, C=10$ can be seen in Figure [\ref{fig:confusionMatrixSVM}].
+It is apparent the best performing mode was $'rbf'$, which is the expected result: this indirectly confirms that the data is not linearly separable and therefore a linear kernel mode could have never performed well enough to surpass its competitors. RBF has the highest performance because it can sort of bend the separation line around data, better fitting the separation and achieving a higher precision and accuracy.\\The statistics that follow are the ones obtained by training a SVM with kernel mode 'rbf' and with $C = 10$ and be seen in Table [\ref{tab:smvPerformance}]. The confusion matrix of said configuration can be seen in Figure [\ref{fig:confusionMatrixSVM}].
 
+\begin{table}[H]
+    \centering
+    \caption{SVM Performance Scores}
+    \begin{tabular}{lcccc}
+        \toprule
+        \textbf{F1-Score} & \textbf{Accuracy} & \textbf{Precision} & \textbf{Recall} \\
+        \midrule
+        0.8092 & 0.8501 & 0.8087 & 0.8345 \\
+        \bottomrule
+    \end{tabular}
+    \label{tab:smvPerformance}
+\end{table}
 
 \begin{figure}[htbp]
     \begin{subfigure}[b]{0.48\textwidth}
@@ -352,16 +367,17 @@ From the analysis that was conducted, out of all the models that were trained an
     \caption{Model Performance Comparison (Best Hyperparameter Versions)}
     \begin{tabular}{lcccc}
         \toprule
-        \textbf{Model} & \textbf{Accuracy} & \textbf{Precision (Macro)} & \textbf{Recall (Macro)} & \textbf{F1 (Macro)} \\
+        \textbf{Model} & \textbf{F1 (Macro)} & \textbf{Accuracy} & \textbf{Precision (Macro)} & \textbf{Recall (Macro)} \\
         \midrule
-        KNN & 0.8736 & 0.8482 & 0.8312 & 0.8341 \\
-        \textbf{Random Forest} & \textbf{0.8887} & \textbf{0.8594} & \textbf{0.8565} & \textbf{0.8583} \\
-        SVM & 0.8501 & 0.8087 & 0.8345 & 0.8092 \\
+        KNN & 0.8341 & 0.8736 & 0.8482 & 0.8312  \\
+        \textbf{Random Forest} & \textbf{0.8583} & \textbf{0.8887} & \textbf{0.8594} & \textbf{0.8565} \\
+        SVM & 0.8092 & 0.8501 & 0.8087 & 0.8345 \\
         \bottomrule
     \end{tabular}
     \label{tab:results}
 \end{table}
 
+\newpage
 
 \subsection{Clustering Analysis}
 Clustering performance was evaluated by comparing models trained on high-dimensional scaled data against those trained on a two-dimensional PCA projection. This comparison highlights a significant trade-off: while dimensionality reduction simplifies the feature space and does, in some way, help models produce a higher quality result, it does not inherently make the data more clusterable.\\A final table was compiled, listing all the obtained evaluation metric results, which is available at Table [\ref{tab:resultscomparison}].

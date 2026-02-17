@@ -268,7 +268,7 @@ def main():
             class_names = [str(c) for c in LE.classes_], 
             filled = True, 
             rounded = True, 
-            max_depth = 3,  
+            max_depth = 3,
             precision = 2,  
             fontsize = 10)
     plt.title(f"Optimized Tree Structure (Max Depth: {best_params['randomforestclassifier__max_depth']})")
